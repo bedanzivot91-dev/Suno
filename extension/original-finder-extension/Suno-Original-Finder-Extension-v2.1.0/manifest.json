@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Suno Original Finder 2.1 — Suno Pesme Studio",
   "short_name": "Suno Original 2.1",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Automatski prepoznaje originalnu Suno pesmu u YouTube videu ili Shorts-u preko lokalnog Bridge-a i indeksirane biblioteke Suno Pesme Studio.",
   "minimum_chrome_version": "114",
   "permissions": [
