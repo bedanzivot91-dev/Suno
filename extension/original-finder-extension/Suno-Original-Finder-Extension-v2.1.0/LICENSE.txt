@@ -1,0 +1,5 @@
+Suno Original Finder — korisnički dodatak za Suno Pesme Studio
+
+Dozvoljeno je korišćenje, menjanje i privatna distribucija ovog source koda uz zadržavanje ovog obaveštenja. Softver se isporučuje bez garancije. Korisnik je odgovoran da analizira samo sadržaj za koji ima pravo pristupa i obrade.
+
+Nazivi Suno i YouTube pripadaju svojim vlasnicima. Ovaj dodatak nije zvanični proizvod kompanija Suno ili Google/YouTube.

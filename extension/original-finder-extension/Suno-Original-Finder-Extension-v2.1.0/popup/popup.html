@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="sr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Suno Original Finder 2.1</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<main class="shell">
+  <section class="metal">
+    <header class="header">
+      <div class="logo"><b>SP-90</b></div>
+      <div class="brand"><h1>Suno Original 2</h1><p>YouTube ↔ indeksirana Suno biblioteka</p></div>
+      <span id="statusDot" class="status-dot"></span>
+    </header>
+    <div id="connection" class="section"><div class="notice">Proveravam Bridge, program i audio indeks…</div></div>
+    <div id="current" class="section"><div class="label">Trenutni video</div><div class="notice">Otvori YouTube video ili Shorts.</div></div>
+    <div class="section">
+      <div class="row wrap">
+        <button id="recognizeBtn" class="btn primary">Prepoznaj sada</button>
+        <button id="indexBtn" class="btn yellow">Audio indeks</button>
+        <button id="panelBtn" class="btn">Veliki panel</button>
+        <button id="appBtn" class="btn">Otvori program</button>
+      </div>
+    </div>
+    <div class="section">
+      <div class="toggle"><span>Automatsko prepoznavanje</span><label class="switch"><input id="autoAnalyze" type="checkbox"><span class="slider"></span></label></div>
+      <div class="toggle"><span>Prikaži karticu na YouTube-u</span><label class="switch"><input id="showCard" type="checkbox"><span class="slider"></span></label></div>
+    </div>
+    <div class="section"><div class="label">Poslednji potvrđeni rezultati</div><div id="history" class="history"><span class="muted">Nema rezultata.</span></div></div>
+    <div class="section"><button id="settingsBtn" class="btn ghost">Podešavanja i dijagnostika</button></div>
+    <footer class="footer">Suno Original Finder v2.1.0 · Bridge 8766 · lokalna obrada</footer>
+  </section>
+</main>
+<script src="../shared/core.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

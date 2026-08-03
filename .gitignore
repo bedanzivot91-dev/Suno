@@ -1,0 +1,30 @@
+# Bundled third-party runtimes/tools -- large binaries, fetched automatically
+# at runtime by ensure_ffmpeg()/ensure_ytdlp()/ensure_fpcalc() in audio_tools.py
+# and audio_match.py. Not source code, do not belong in version control.
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/python/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/tools/
+
+# Installer/uninstaller/launcher executables (build output, not source)
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/*.exe
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/*.exe
+
+# User's personal data: song library database, logs, downloaded/exported
+# audio, waveform cache -- never belongs in a shared repo.
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/data/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/Biblioteka_pesama/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/Preuzete_pesme/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/Izvoz/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/Pronalazac_pesme/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/OBRA*/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/licences/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/manifests/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/models/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/recovery/
+extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5/Program/runtime/
+
+# Redundant nested archive (already extracted alongside it)
+extension/Suno-Original-Finder-Extension-v2.1.0.zip
+
+# Python bytecode cache
+__pycache__/
+*.pyc

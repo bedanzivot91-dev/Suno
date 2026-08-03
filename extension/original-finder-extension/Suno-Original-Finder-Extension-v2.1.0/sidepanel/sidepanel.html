@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="sr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Suno Original panel</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+<main class="shell">
+  <section class="metal">
+    <header class="header">
+      <div class="logo"><b>SP-90</b></div>
+      <div class="brand"><h1>Original Control 2.1</h1><p>Bridge, indeks, prepoznavanje i YouTube alati</p></div>
+      <span id="statusDot" class="status-dot"></span>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="current">Trenutno</button>
+      <button class="tab" data-tab="manual">Ručno</button>
+      <button class="tab" data-tab="history">Istorija</button>
+      <button class="tab" data-tab="batch">Grupno</button>
+      <button class="tab" data-tab="insights">Uvidi</button>
+      <button class="tab" data-tab="diag">Dijagnostika</button>
+    </nav>
+
+    <section id="pane-current" class="pane active">
+      <div id="currentView" class="section"><div class="notice">Čitam trenutni YouTube video…</div></div>
+      <div class="section">
+        <div class="row wrap">
+          <button id="analyzeBtn" class="btn primary">Analiziraj</button>
+          <button id="deepAnalyzeBtn" class="btn yellow">Duboka analiza</button>
+          <button id="refreshBtn" class="btn">Osveži rezultat</button>
+          <button id="openAppBtn" class="btn yellow">Otvori program</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="pane-manual" class="pane">
+      <div class="section">
+        <div class="label">Ručno izaberi Suno pesmu</div>
+        <div class="notice warn">Prvo koristi <b>Audio proveru</b>. „Poveži ručno“ samo upisuje vezu u bazu i ne dokazuje da je zvuk isti.</div>
+        <div class="field"><label>Pretraga biblioteke</label><input id="songSearch" placeholder="Upiši naziv pesme…"></div>
+        <div id="songResults" class="song-results"><span class="muted">Upiši najmanje 2 slova.</span></div>
+      </div>
+    </section>
+
+    <section id="pane-history" class="pane">
+      <div class="section">
+        <div class="row"><div class="label" style="flex:1">Nedavni potvrđeni rezultati</div><button id="exportHistoryBtn" class="btn">CSV</button><button id="clearHistoryBtn" class="btn red">Obriši</button></div>
+        <div id="historyView" class="history"></div>
+      </div>
+    </section>
+
+    <section id="pane-batch" class="pane">
+      <div class="section">
+        <div class="label">Povezani YouTube kanali</div>
+        <div class="field"><label>Kanal</label><select id="batchChannel"><option value="">Svi povezani kanali</option></select></div>
+        <div class="grid two form-gap">
+          <div class="field"><label>Režim provere</label><select id="batchMode"><option value="new">Samo novi videi</option><option value="uncertain">Novi i nepouzdani</option><option value="all">Ponovo proveri sve</option></select></div>
+          <div class="field"><label>Maksimalno videa</label><input id="batchMaxVideos" type="number" min="1" max="500" value="100"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="label">Grupne provere</div>
+        <div class="row wrap">
+          <button id="metadataScanBtn" class="btn">Osveži objave</button>
+          <button id="scanVideosBtn" class="btn primary">Audio proveri videe</button>
+          <button id="scanShortsBtn" class="btn yellow">Audio proveri Shorts</button>
+          <button id="globalScanBtn" class="btn red">Traži tuđe objave</button>
+          <button id="fingerprintsBtn" class="btn">Dopuni audio indeks</button>
+          <button id="rebuildIndexBtn" class="btn yellow">Ponovo napravi indeks</button>
+          <button id="pauseTaskBtn" class="btn yellow">Pauziraj zadatak</button>
+          <button id="resumeTaskBtn" class="btn primary">Nastavi zadatak</button>
+          <button id="cancelTaskBtn" class="btn red">Otkaži zadatak</button>
+        </div>
+        <div id="batchStatus" class="notice" style="margin-top:9px">Nema aktivnog grupnog zadatka.</div>
+      </div>
+      <div class="section">
+        <div class="label">Održavanje i izveštaji</div>
+        <div class="row wrap">
+          <button id="audioReportBtn" class="btn">Audio izveštaj</button>
+          <button id="coverageReportBtn" class="btn">Pokrivenost pesama</button>
+          <button id="cleanupAudioBtn" class="btn red">Očisti YouTube audio-keš</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="pane-insights" class="pane">
+      <div class="section"><div class="row"><div class="label" style="flex:1">YouTube ↔ Suno uvidi</div><button id="refreshInsightsBtn" class="btn primary">Osveži</button></div><div id="insightsView" class="notice">Učitavam podatke…</div></div>
+    </section>
+
+    <section id="pane-diag" class="pane">
+      <div class="section"><div id="diagView" class="notice">Proveravam program…</div></div>
+      <div class="section">
+        <div class="row wrap">
+          <button id="testBtn" class="btn primary">Test veze</button>
+          <button id="showLogsBtn" class="btn">Logovi programa</button>
+          <button id="clearCacheBtn" class="btn">Očisti extension keš</button>
+          <button id="optionsBtn" class="btn yellow">Podešavanja</button>
+        </div>
+        <pre id="logsView" class="notice" style="display:none;white-space:pre-wrap;margin-top:9px"></pre>
+      </div>
+    </section>
+
+    <footer class="footer">Suno Original Finder v2.1.0 · lokalni Bridge adapter · bez menjanja server.py</footer>
+  </section>
+</main>
+<script src="../shared/core.js"></script>
+<script src="sidepanel.js"></script>
+</body>
+</html>

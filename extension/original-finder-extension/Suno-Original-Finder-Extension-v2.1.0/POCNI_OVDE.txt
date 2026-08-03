@@ -1,0 +1,16 @@
+SUNO ORIGINAL FINDER 2.1 — POČNI OVDE
+
+1. Pokreni Suno Pesme Studio i otključaj ga PIN-om.
+2. Dvaput klikni INSTALIRAJ_I_POPRAVI.bat.
+3. U chrome://extensions ukloni staru verziju 1.0.0.
+4. Klikni Load unpacked / Učitaj raspakovano.
+5. Izaberi CEO folder Suno-Original-Finder-Extension-v2.1.0.
+6. Otvori YouTube Shorts i klikni PREPOZNAJ SADA.
+
+Ispravan rezultat u popup-u mora da pokaže:
+- Bridge 2.1.0
+- Program 3.3.2 ili noviji
+- broj pesama u biblioteci
+- broj indeksiranih pesama
+
+Ako broj indeksiranih pesama iznosi 0, klikni AUDIO INDEKS.

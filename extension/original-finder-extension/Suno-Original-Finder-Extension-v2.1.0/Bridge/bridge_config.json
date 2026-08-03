@@ -1,0 +1,7 @@
+{
+  "host": "127.0.0.1",
+  "port": 8766,
+  "program_base": "http://127.0.0.1:8765",
+  "request_timeout_seconds": 30,
+  "max_lookup_rows": 20000
+}

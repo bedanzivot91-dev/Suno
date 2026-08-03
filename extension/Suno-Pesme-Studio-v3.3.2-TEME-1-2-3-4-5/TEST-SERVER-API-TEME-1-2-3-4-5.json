@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "date_utc": "2026-08-03T18:42:33Z",
+  "app": "Suno Pesme Studio",
+  "version": "3.3.2",
+  "test_port": 8877,
+  "routes": [
+    {"path": "/", "http": 200, "bytes": 138531},
+    {"path": "/assets/style.css", "http": 200, "bytes": 223285},
+    {"path": "/assets/app.js", "http": 200, "bytes": 252461},
+    {"path": "/api/health", "http": 200},
+    {"path": "/api/status", "http": 200},
+    {"path": "/api/songs?limit=5", "http": 200}
+  ],
+  "static_checks": {
+    "javascript_node_check": true,
+    "python_py_compile": true,
+    "html_ids": 767,
+    "duplicate_html_ids": 0,
+    "css_rules_and_at_rules": 2150,
+    "css_parser_errors": 0
+  }
+}

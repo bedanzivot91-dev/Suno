@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="sr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suno Pesme Studio</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body data-theme="signal-grid" class="signal-grid-app">
+  <div class="app-shell">
+
+    <header class="br-topbar" id="brTopbar">
+      <button class="br-hamburger" id="brHamburger" type="button" title="Prikaži sve stranice">☰</button>
+      <div class="br-logo" aria-label="Suno Pesme Studio">
+        <strong>SUNO PESME</strong><span>STUDIO</span>
+      </div>
+      <nav class="br-topnav" id="brTopNav" aria-label="Glavna navigacija">
+        <button class="br-nav active" data-br-view="home"><span>⌂</span> Početna</button>
+        <button class="br-nav" data-br-view="library"><span>▤</span> Biblioteka</button>
+        <button class="br-nav" data-br-view="import"><span>◉</span> Suno</button>
+        <button class="br-nav" data-br-view="tools"><span>▶</span> YouTube</button>
+        <button class="br-nav" data-br-view="recognition"><span>✦</span> AI alati</button>
+        <button class="br-nav" data-br-view="audio"><span>↻</span> Konvertor</button>
+        <button class="br-nav" data-br-view="release"><span>▣</span> Metapodaci</button>
+        <button class="br-nav" data-br-view="settings"><span>⚙</span> Podešavanja</button>
+      </nav>
+      <div class="br-top-status">
+        <button class="br-alert" type="button" title="Obaveštenja">●<b>7</b></button>
+        <div class="br-operator"><span class="br-avatar">SO</span><div><strong>Studio Operator</strong><small>Redline FM</small></div><span>⌄</span></div>
+        <div class="br-window-controls" aria-hidden="true"><span>—</span><span>□</span><span>×</span></div>
+      </div>
+    </header>
+
+    <div class="br-more-nav" id="brMoreNav" aria-hidden="true">
+      <div class="br-more-head"><strong>SVE STRANICE</strong><button id="brMoreClose" type="button" aria-label="Zatvori">×</button></div>
+      <div class="br-more-grid">
+        <button data-br-view="home"><span>⌂</span><b>Početna</b><small>Radio kontrola</small></button>
+        <button data-br-view="library"><span>▤</span><b>Biblioteka</b><small>Sve pesme</small></button>
+        <button data-br-view="folders"><span>▰</span><b>Folderi</b><small>Playliste i projekti</small></button>
+        <button data-br-view="audio"><span>✂</span><b>Audio obrada</b><small>Fade, rezanje, format</small></button>
+        <button data-br-view="download"><span>⇩</span><b>Preuzimanje</b><small>Izvoz fajlova</small></button>
+        <button data-br-view="import"><span>＋</span><b>Suno i uvoz</b><small>Nalog i lokalni fajlovi</small></button>
+        <button data-br-view="recognition"><span>⌕</span><b>Pronalazač</b><small>Prepoznavanje pesme</small></button>
+        <button data-br-view="smart"><span>⚑</span><b>Pametna biblioteka</b><small>Automatska pravila</small></button>
+        <button data-br-view="versions"><span>⇄</span><b>Version Lab</b><small>Poređenje verzija</small></button>
+        <button data-br-view="release"><span>▣</span><b>Metapodaci</b><small>Release Center</small></button>
+        <button data-br-view="tools"><span>✦</span><b>AI i YouTube alati</b><small>Analiza i provera</small></button>
+        <button data-br-view="production"><span>⚡</span><b>Produkcija v3</b><small>Video i Shorts</small></button>
+        <button data-br-view="stats"><span>◔</span><b>Statistika</b><small>Pregled biblioteke</small></button>
+        <button data-br-view="logs"><span>≡</span><b>Dnevnik</b><small>Radnje i greške</small></button>
+        <button data-br-view="settings"><span>⚙</span><b>Podešavanja</b><small>Backup i izgled</small></button>
+      </div>
+    </div>
+
+    <aside class="br-left-console" id="brLeftConsole">
+      <div class="br-search"><input id="brQueueSearch" type="search" placeholder="Traži pesmu..."><span>⌕</span><button type="button">▽</button></div>
+      <div class="br-left-tabs">
+        <button class="active" data-br-queue-tab="queue">QUEUE</button>
+        <button data-br-queue-tab="library">BIBLIOTEKA</button>
+        <button data-br-queue-tab="playlists">PLAYLISTE</button>
+      </div>
+      <div class="br-queue-head"><span>AKTIVNI REDOSLED</span><b id="brQueueSummary">0 pesama · 0:00</b><button id="brAddQueueBtn" type="button">＋ Dodaj</button><button type="button">⋮</button></div>
+      <div class="br-queue-list" id="brQueueList"></div>
+      <div class="br-queue-total"><span>UKUPNO TRAJANJE</span><strong id="brQueueTotal">0:00</strong></div>
+    </aside>
+
+
+    <aside class="sm-left-console" id="smLeftConsole">
+      <div class="sm-brand-block">
+        <div class="sm-brand-main"><strong>SUNO</strong><span>PESME</span><b>STUDIO</b></div>
+        <small>v3.3.2</small>
+      </div>
+      <nav class="sm-main-nav" aria-label="Nedostaješ PUNOO navigacija">
+        <button class="sm-nav active" data-sm-view="home"><span>⌂</span><b>Početna</b></button>
+        <button class="sm-nav" data-sm-view="library"><span>▥</span><b>Biblioteka</b></button>
+        <button class="sm-nav" data-sm-view="import"><span class="sm-ai-stamp">AI</span><b>Suno</b></button>
+        <button class="sm-nav" data-sm-view="tools"><span>▶</span><b>YouTube</b></button>
+      </nav>
+      <div class="sm-nav-label">AI ALATI</div>
+      <nav class="sm-main-nav sm-tools-nav">
+        <button class="sm-nav" data-sm-view="recognition"><span>✦</span><b>AI alati</b></button>
+        <button class="sm-nav" data-sm-view="audio"><span>↻</span><b>Konvertor</b></button>
+        <button class="sm-nav" data-sm-view="release"><span>◇</span><b>Metapodaci</b></button>
+      </nav>
+      <button class="sm-all-pages-toggle" id="smAllPagesToggle" type="button"><span>☷</span><b>Sve stranice</b><small>15 modula</small></button>
+      <div class="sm-sticker-stack" aria-hidden="true">
+        <span class="sm-sticker sm-sticker-blue">SP</span>
+        <span class="sm-sticker sm-sticker-red">CREATE.<br>RECORD.<br>RELEASE.</span>
+        <span class="sm-sticker sm-sticker-white">PARENTAL<br>ADVISORY</span>
+      </div>
+      <button class="sm-settings-nav" data-sm-view="settings"><span>⚙</span><b>Podešavanja</b></button>
+    </aside>
+
+    <div class="sm-pages-drawer" id="smPagesDrawer" aria-hidden="true">
+      <div class="sm-drawer-head"><strong>STUDIO MODULI</strong><button id="smPagesClose" type="button">×</button></div>
+      <div class="sm-pages-grid">
+        <button data-sm-view="home"><span>01</span><b>Početna</b><small>Nedostaješ PUNOO</small></button>
+        <button data-sm-view="library"><span>02</span><b>Biblioteka</b><small>Sve pesme</small></button>
+        <button data-sm-view="folders"><span>03</span><b>Folderi</b><small>Projekti i kolekcije</small></button>
+        <button data-sm-view="audio"><span>04</span><b>Audio obrada</b><small>Rezanje i konverzija</small></button>
+        <button data-sm-view="download"><span>05</span><b>Preuzimanje</b><small>Izvoz fajlova</small></button>
+        <button data-sm-view="import"><span>06</span><b>Suno i uvoz</b><small>Nalog i lokalni fajlovi</small></button>
+        <button data-sm-view="recognition"><span>07</span><b>Pronalazač</b><small>Audio prepoznavanje</small></button>
+        <button data-sm-view="smart"><span>08</span><b>Pametna biblioteka</b><small>Automatska pravila</small></button>
+        <button data-sm-view="versions"><span>09</span><b>Version Lab</b><small>Poređenje verzija</small></button>
+        <button data-sm-view="release"><span>10</span><b>Metapodaci</b><small>Release Center</small></button>
+        <button data-sm-view="tools"><span>11</span><b>AI i YouTube</b><small>Analiza i provera</small></button>
+        <button data-sm-view="production"><span>12</span><b>Produkcija v3</b><small>Video i Shorts</small></button>
+        <button data-sm-view="stats"><span>13</span><b>Statistika</b><small>Pregled biblioteke</small></button>
+        <button data-sm-view="logs"><span>14</span><b>Dnevnik</b><small>Radnje i greške</small></button>
+        <button data-sm-view="settings"><span>15</span><b>Podešavanja</b><small>Backup i izgled</small></button>
+      </div>
+    </div>
+
+
+    <aside class="lc-left-console" id="lcLeftConsole">
+      <div class="lc-brand">
+        <span class="lc-crown">♛</span><strong>SUNO PESME</strong><small>STUDIO</small><em>LABEL COMMAND</em>
+      </div>
+      <nav class="lc-primary-nav" aria-label="Label Command navigacija">
+        <button class="lc-nav active" data-lc-view="home"><span>01</span><b>Početna</b><i></i></button>
+        <button class="lc-nav" data-lc-view="library"><span>02</span><b>Biblioteka</b><i></i></button>
+        <button class="lc-nav" data-lc-view="import"><span>03</span><b>Suno</b><i></i></button>
+        <button class="lc-nav" data-lc-view="tools"><span>04</span><b>YouTube</b><i></i></button>
+      </nav>
+      <div class="lc-divider"></div>
+      <nav class="lc-primary-nav lc-secondary-nav">
+        <button class="lc-nav" data-lc-view="recognition"><span>05</span><b>Traži pesmu</b><i></i></button>
+        <button class="lc-nav" data-lc-view="production"><span>06</span><b>AI Alati</b><i></i></button>
+        <button class="lc-nav" data-lc-view="audio"><span>07</span><b>Konvertor</b><i></i></button>
+        <button class="lc-nav" data-lc-view="release"><span>08</span><b>Metapodaci</b><i></i></button>
+      </nav>
+      <div class="lc-divider"></div>
+      <nav class="lc-primary-nav lc-secondary-nav">
+        <button class="lc-nav" data-lc-view="stats"><span>09</span><b>Izveštaji</b><i></i></button>
+        <button class="lc-nav" data-lc-view="smart"><span>10</span><b>Planer objava</b><i></i></button>
+        <button class="lc-nav" data-lc-view="settings"><span>11</span><b>Podešavanja</b><i></i></button>
+      </nav>
+      <button class="lc-all-pages" id="lcAllPagesToggle" type="button"><span>☷</span><b>Svi moduli</b><small>15 stranica</small></button>
+      <div class="lc-sidebar-sign"><strong>S</strong><span>SUNO PESME STUDIO v3.3.2</span></div>
+    </aside>
+
+    <header class="lc-topbar" id="lcTopbar">
+      <div class="lc-breadcrumb"><strong>DASHBOARD</strong><span>/</span><b id="lcPageTitle">POČETNA</b></div>
+      <label class="lc-global-search"><span>⌕</span><input id="lcGlobalSearch" type="search" placeholder="Traži pesmu, izvođača, album..."><kbd>⌘</kbd><kbd>K</kbd></label>
+      <div class="lc-top-actions"><button type="button" title="Obaveštenja">♟<i>3</i></button><button type="button" title="Kalendar">□</button><div class="lc-account"><span class="lc-account-seal">S</span><div><strong>SPS Label</strong><small>Direktor</small></div><b>⌄</b></div></div>
+    </header>
+
+    <div class="lc-pages-drawer" id="lcPagesDrawer" aria-hidden="true">
+      <div class="lc-drawer-head"><div><small>LABEL COMMAND</small><strong>Svi studijski moduli</strong></div><button id="lcPagesClose" type="button">×</button></div>
+      <div class="lc-pages-grid">
+        <button data-lc-view="home"><span>01</span><b>Početna</b><small>Kontrolna tabla</small></button>
+        <button data-lc-view="library"><span>02</span><b>Biblioteka</b><small>Sve pesme</small></button>
+        <button data-lc-view="folders"><span>03</span><b>Folderi</b><small>Kolekcije i projekti</small></button>
+        <button data-lc-view="audio"><span>04</span><b>Audio obrada</b><small>Konverzija i mastering</small></button>
+        <button data-lc-view="download"><span>05</span><b>Preuzimanje</b><small>Izvoz fajlova</small></button>
+        <button data-lc-view="import"><span>06</span><b>Suno i uvoz</b><small>Nalog i lokalni fajlovi</small></button>
+        <button data-lc-view="recognition"><span>07</span><b>Traži pesmu</b><small>Prepoznavanje zvuka</small></button>
+        <button data-lc-view="smart"><span>08</span><b>Pametna biblioteka</b><small>Automatska pravila</small></button>
+        <button data-lc-view="versions"><span>09</span><b>Version Lab</b><small>Poređenje verzija</small></button>
+        <button data-lc-view="release"><span>10</span><b>Metapodaci</b><small>Release Center</small></button>
+        <button data-lc-view="tools"><span>11</span><b>YouTube alati</b><small>Kanali i provera</small></button>
+        <button data-lc-view="production"><span>12</span><b>AI produkcija</b><small>Video i Shorts</small></button>
+        <button data-lc-view="stats"><span>13</span><b>Izveštaji</b><small>Statistika biblioteke</small></button>
+        <button data-lc-view="logs"><span>14</span><b>Dnevnik</b><small>Radnje i greške</small></button>
+        <button data-lc-view="settings"><span>15</span><b>Podešavanja</b><small>Backup i izgled</small></button>
+      </div>
+    </div>
+
+
+    <aside class="vl-shelf" id="vlShelf" aria-label="Vinyl Loft polica albuma">
+      <div class="vl-shelf-slot rust"><span>URBANE<br>PESME</span></div>
+      <div class="vl-shelf-slot amber"><span>TIHE<br>NOĆI</span></div>
+      <div class="vl-shelf-slot olive"><span>BALKAN<br>LOFI</span></div>
+      <div class="vl-shelf-slot blue"><span>NOĆNE<br>VOŽNJE</span></div>
+      <div class="vl-shelf-status"><span>●</span><div><strong>VINYL LOFT</strong><small>v3.3.2 · Premium</small></div><i></i></div>
+    </aside>
+
+    <header class="vl-topbar" id="vlTopbar">
+      <div class="vl-logo"><span class="vl-logo-disc"><i></i></span><div><strong>SUNO PESME</strong><small>STUDIO</small></div></div>
+      <label class="vl-search"><span>⌕</span><input id="vlGlobalSearch" type="search" placeholder="Traži pesmu..."></label>
+      <div class="vl-title"><i></i><strong>VINYL LOFT</strong><i></i></div>
+      <button class="vl-new-song" data-vl-view="import" type="button">＋ Nova pesma</button>
+      <button class="vl-bell" type="button" title="Obaveštenja">♧</button>
+      <div class="vl-profile"><span>SM</span><div><strong>Studio Master</strong><small>Premium</small></div><b>⌄</b></div>
+      <div class="vl-window-controls" aria-hidden="true"><span>—</span><span>□</span><span>×</span></div>
+    </header>
+
+    <aside class="vl-left-console" id="vlLeftConsole">
+      <small class="vl-nav-caption">NAVIGACIJA</small>
+      <nav class="vl-nav-list" aria-label="Vinyl Loft navigacija">
+        <button class="vl-nav active" data-vl-view="home"><span>⌂</span><b>Početna</b></button>
+        <button class="vl-nav" data-vl-view="library"><span>▤</span><b>Biblioteka</b></button>
+        <button class="vl-nav" data-vl-view="import"><span>◉</span><b>Suno</b></button>
+        <button class="vl-nav" data-vl-view="tools"><span>▶</span><b>YouTube</b></button>
+      </nav>
+      <small class="vl-nav-caption">AI ALATI</small>
+      <nav class="vl-nav-list">
+        <button class="vl-nav" data-vl-view="recognition"><span>✧</span><b>AI alati</b></button>
+        <button class="vl-nav" data-vl-view="audio"><span>↻</span><b>Konvertor</b></button>
+        <button class="vl-nav" data-vl-view="release"><span>◇</span><b>Metapodaci</b></button>
+      </nav>
+      <small class="vl-nav-caption">SISTEM</small>
+      <nav class="vl-nav-list"><button class="vl-nav" data-vl-view="settings"><span>⚙</span><b>Podešavanja</b></button></nav>
+      <button class="vl-all-pages" id="vlAllPagesToggle" type="button"><span>☷</span><div><b>Svi moduli</b><small>15 stranica</small></div></button>
+    </aside>
+
+    <div class="vl-pages-drawer" id="vlPagesDrawer" aria-hidden="true">
+      <div class="vl-drawer-head"><div><small>VINYL LOFT</small><strong>Kompletan studio</strong></div><button id="vlPagesClose" type="button">×</button></div>
+      <div class="vl-pages-grid">
+        <button data-vl-view="home"><span>01</span><b>Početna</b><small>Vinyl kontrolna tabla</small></button>
+        <button data-vl-view="library"><span>02</span><b>Biblioteka</b><small>Albumi i pesme</small></button>
+        <button data-vl-view="folders"><span>03</span><b>Folderi</b><small>Kolekcije</small></button>
+        <button data-vl-view="audio"><span>04</span><b>Audio obrada</b><small>Mastering i konverzija</small></button>
+        <button data-vl-view="download"><span>05</span><b>Preuzimanje</b><small>Izvoz fajlova</small></button>
+        <button data-vl-view="import"><span>06</span><b>Suno i uvoz</b><small>Nalog i lokalni fajlovi</small></button>
+        <button data-vl-view="recognition"><span>07</span><b>Pronalazač</b><small>Audio prepoznavanje</small></button>
+        <button data-vl-view="smart"><span>08</span><b>Pametna biblioteka</b><small>Automatska pravila</small></button>
+        <button data-vl-view="versions"><span>09</span><b>Version Lab</b><small>Poređenje verzija</small></button>
+        <button data-vl-view="release"><span>10</span><b>Metapodaci</b><small>Release Center</small></button>
+        <button data-vl-view="tools"><span>11</span><b>YouTube alati</b><small>Kanali i provera</small></button>
+        <button data-vl-view="production"><span>12</span><b>AI produkcija</b><small>Video i Shorts</small></button>
+        <button data-vl-view="stats"><span>13</span><b>Statistika</b><small>Pregled biblioteke</small></button>
+        <button data-vl-view="logs"><span>14</span><b>Dnevnik</b><small>Radnje i greške</small></button>
+        <button data-vl-view="settings"><span>15</span><b>Podešavanja</b><small>Backup i izgled</small></button>
+      </div>
+    </div>
+
+    <header class="sg-topbar" id="sgTopbar">
+      <div class="sg-logo"><strong>SUNO PESME STUDIO</strong><small>SIGNAL GRID</small></div>
+      <div class="sg-resource"><span>CPU</span><div><i id="sgCpuBar"></i></div><b id="sgCpuValue">23%</b></div>
+      <div class="sg-resource"><span>RAM</span><div><i id="sgRamBar"></i></div><b id="sgRamValue">41%</b></div>
+      <div class="sg-resource"><span>DISK</span><div><i id="sgDiskBar"></i></div><b id="sgDiskValue">12%</b></div>
+      <div class="sg-clock"><strong id="sgClock">00:00:00</strong><small id="sgDate">—</small></div>
+      <div class="sg-window-controls" aria-hidden="true"><span>≡</span><span>—</span><span>□</span><span>×</span></div>
+    </header>
+
+    <aside class="sg-left-console" id="sgLeftConsole">
+      <div class="sg-rail-label">SIGNAL GRID RACK</div>
+      <div class="sg-module-title"><span>NAVIGACIJA</span><i></i></div>
+      <nav class="sg-nav-list" aria-label="Signal Grid navigacija">
+        <button class="sg-nav active" data-sg-view="home"><span>⌂</span><b>POČETNA</b><i></i></button>
+        <button class="sg-nav" data-sg-view="library"><span>☷</span><b>BIBLIOTEKA</b><i></i></button>
+        <button class="sg-nav" data-sg-view="import"><span>〰</span><b>SUNO</b><i></i></button>
+        <button class="sg-nav" data-sg-view="tools"><span>▶</span><b>YOUTUBE</b><i></i></button>
+        <button class="sg-nav" data-sg-view="recognition"><span>AI</span><b>AI ALATI</b><i></i></button>
+        <button class="sg-nav" data-sg-view="audio"><span>⇄</span><b>KONVERTOR</b><i></i></button>
+        <button class="sg-nav" data-sg-view="release"><span>◇</span><b>METAPODACI</b><i></i></button>
+        <button class="sg-nav" data-sg-view="settings"><span>⚙</span><b>PODEŠAVANJA</b><i></i></button>
+      </nav>
+      <button class="sg-all-pages" id="sgAllPagesToggle" type="button">☷ SVI MODULI <small>15</small></button>
+      <div class="sg-rack-handle"></div>
+    </aside>
+
+    <div class="sg-pages-drawer" id="sgPagesDrawer" aria-hidden="true">
+      <div class="sg-drawer-head"><strong>SIGNAL GRID · MODULI</strong><button id="sgPagesClose" type="button">×</button></div>
+      <div class="sg-pages-grid">
+        <button data-sg-view="home"><span>01</span><b>POČETNA</b><small>Signalni pregled</small></button>
+        <button data-sg-view="library"><span>02</span><b>BIBLIOTEKA</b><small>Tehnička tabela</small></button>
+        <button data-sg-view="folders"><span>03</span><b>FOLDERI</b><small>Kolekcije i projekti</small></button>
+        <button data-sg-view="audio"><span>04</span><b>AUDIO OBRADA</b><small>DSP i konverzija</small></button>
+        <button data-sg-view="download"><span>05</span><b>PREUZIMANJE</b><small>Izvoz fajlova</small></button>
+        <button data-sg-view="import"><span>06</span><b>SUNO I UVOZ</b><small>Nalog i lokalni fajlovi</small></button>
+        <button data-sg-view="recognition"><span>07</span><b>PRONALAZAČ</b><small>Prepoznavanje signala</small></button>
+        <button data-sg-view="smart"><span>08</span><b>PAMETNA BIBLIOTEKA</b><small>Automatska pravila</small></button>
+        <button data-sg-view="versions"><span>09</span><b>VERSION LAB</b><small>Poređenje verzija</small></button>
+        <button data-sg-view="release"><span>10</span><b>METAPODACI</b><small>Release Center</small></button>
+        <button data-sg-view="tools"><span>11</span><b>YOUTUBE ALATI</b><small>Kanali i provera</small></button>
+        <button data-sg-view="production"><span>12</span><b>AI PRODUKCIJA</b><small>Video i Shorts</small></button>
+        <button data-sg-view="stats"><span>13</span><b>STATISTIKA</b><small>Analitika biblioteke</small></button>
+        <button data-sg-view="logs"><span>14</span><b>DNEVNIK</b><small>Radnje i greške</small></button>
+        <button data-sg-view="settings"><span>15</span><b>PODEŠAVANJA</b><small>Backup i izgled</small></button>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">♫</div><div><strong>Suno Pesme</strong><span>Studio</span></div></div>
+      <nav id="nav">
+        <button class="nav-item active" data-view="library"><span>▦</span> Biblioteka</button>
+        <button class="nav-item" data-view="folders"><span>▰</span> Folderi</button>
+        <button class="nav-item" data-view="audio"><span>✂</span> Audio obrada</button>
+        <button class="nav-item" data-view="download"><span>⇩</span> Preuzimanje</button>
+        <button class="nav-item" data-view="import"><span>＋</span> Uvoz</button>
+        <button class="nav-item" data-view="recognition"><span>⌕</span> Pronalazač pesme</button>
+        <button class="nav-item" data-view="smart"><span>⚑</span> Pametna biblioteka</button>
+        <button class="nav-item" data-view="versions"><span>⇄</span> Version Lab</button>
+        <button class="nav-item" data-view="release"><span>▣</span> Release Center</button>
+        <button class="nav-item" data-view="tools"><span>✦</span> Pametni alati</button>
+        <button class="nav-item" data-view="production"><span>⚡</span> Produkcija v3</button>
+        <button class="nav-item" data-view="stats"><span>◔</span> Statistika</button>
+        <button class="nav-item" data-view="logs"><span>≡</span> Dnevnik</button>
+        <button class="nav-item" data-view="settings"><span>⚙</span> Podešavanja</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div id="connectionBadge" class="connection offline"><i></i><span>Nije povezano</span></div>
+        <div class="version">v3.3.2 · originalni interfejs + trajna biblioteka, Pronalazač pesme i automatska YouTube provera</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><h1 id="pageTitle">Moja Suno biblioteka</h1><p id="pageSubtitle">Sve pesme, tekstovi i fajlovi na jednom mestu.</p></div>
+        <div class="top-actions"><button id="checkNewBtn" class="btn success">Proveri nove <span id="newSongsBadge" class="count-badge hidden">0</span></button><button id="connectBtn" class="btn secondary">Poveži Suno</button><button id="syncBtn" class="btn primary">Sinhronizuj</button></div>
+      </header>
+
+      <section id="taskPanel" class="task-panel hidden">
+        <div class="task-head"><div><strong id="taskTitle">Obrada</strong><span id="taskMessage">Pokretanje...</span></div><div class="button-row"><button id="pauseTaskBtn" class="btn ghost small">Pauziraj</button><button id="cancelTaskBtn" class="btn danger small">Zaustavi</button></div></div>
+        <div class="progress"><div id="taskProgress"></div></div>
+        <div class="task-meta"><span id="taskCurrent"></span><span id="taskCount"></span></div>
+        <details><summary>Prikaži detaljan tok rada</summary><div id="taskLogs" class="mini-log"></div></details>
+      </section>
+
+
+      <section id="view-home" class="view active br-home-view">
+        <div class="br-panel br-active-song-panel">
+          <div class="br-panel-title"><span>AKTIVNA PESMA</span><button type="button">⋮</button></div>
+          <div class="br-active-song-content">
+            <div class="br-active-cover-wrap"><img id="brActiveCover" alt="Omot aktivne pesme" hidden><div class="br-cover-placeholder" id="brCoverPlaceholder">RADIO<br>REDLINE</div></div>
+            <div class="br-active-meta">
+              <div class="br-active-title-row"><div><h2 id="brActiveTitle">Nijedna pesma nije izabrana</h2><p id="brActiveArtist">Suno Pesme Studio</p></div><span class="br-onair-mini">ON AIR</span></div>
+              <div class="br-tech-line"><span id="brActiveDuration">00:00</span><i></i><span id="brActiveBpm">— BPM</span><i></i><span id="brActiveKey">—</span><i></i><span>44.1 kHz</span><i></i><span>320 kbps</span><i></i><span>MP3</span></div>
+              <div class="br-song-fields"><div><small>IZDAVAČ</small><strong id="brActivePublisher">Suno Pesme Studio</strong></div><div><small>ŽANR</small><strong id="brActiveGenre">—</strong></div><div><small>GODINA</small><strong id="brActiveYear">—</strong></div><div><small>DODATO</small><strong id="brActiveAdded">—</strong></div></div>
+            </div>
+          </div>
+          <div class="br-waveform-wrap" id="brWaveformWrap"><div class="br-waveform-bars" id="brWaveformBars"></div><div class="br-waveform-played" id="brWaveformPlayed"><div class="br-waveform-bars" id="brWaveformPlayedBars"></div></div><div class="br-playhead" id="brPlayhead"></div></div>
+          <div class="br-time-row"><strong id="brElapsed">00:00.0</strong><span>PROTEKLO</span><div class="br-main-transport"><button id="brLoopBtn" type="button">↻</button><button id="brHeadphonesBtn" type="button">◉</button><button id="brPrevBtn" type="button">◀</button><button id="brMainPlayBtn" class="br-main-play" type="button">▶</button><button id="brNextBtn" type="button">▶|</button><button id="brCueBtn" type="button">CUE</button><button type="button">☷</button></div><span>UKUPNO</span><strong id="brTotal">00:00.0</strong></div>
+        </div>
+
+        <div class="br-panel br-quick-actions-panel">
+          <div class="br-panel-title"><span>BRZE AKCIJE</span></div>
+          <div class="br-quick-actions">
+            <button data-br-action="metadata"><span>✎</span><b>Uredi metapodatke</b></button>
+            <button data-br-view="tools"><span>✦</span><b>AI Mastering</b></button>
+            <button data-br-view="audio"><span>▥</span><b>Normalizuj</b></button>
+            <button data-br-view="audio"><span>✂</span><b>Kratki intro/outro</b></button>
+            <button data-br-action="jingle"><span>♩</span><b>Kreiraj Jingle</b></button>
+            <button data-br-view="folders"><span>≡</span><b>Prebaci u playlistu</b></button>
+            <button data-br-view="download"><span>⇧</span><b>Export</b></button>
+          </div>
+        </div>
+
+        <div class="br-panel br-next-song-panel">
+          <div class="br-panel-title"><span>SLEDEĆA PESMA</span></div>
+          <div class="br-next-song"><div class="br-next-cover"><img id="brNextCover" alt="" hidden></div><div><strong id="brNextTitle">Nema sledeće pesme</strong><span id="brNextArtist">—</span><small id="brNextMeta">◷ 00:00 · ◴ — BPM</small></div><div class="br-autoplay"><span>AUTOPLAY</span><button id="brAutoplayToggle" class="active" type="button"><i></i></button><span>FADE<br><b>5 sec</b></span><button type="button">⌄</button></div></div>
+        </div>
+
+        <div class="sm-home-dashboard">
+          <section class="sm-hero-panel">
+            <div class="sm-city-tag">BELGRADE</div>
+            <div class="sm-hero-copy"><h2>NEDOSTAJEŠ PUNOO</h2><p>TI STVARAŠ. MI POJAČAVAMO.</p></div>
+            <div class="sm-hero-cassette" aria-hidden="true">
+              <div class="sm-cassette-label"><strong>SUNO PESME</strong><span>SP-90</span></div>
+              <div class="sm-cassette-window"><i></i><em></em></div>
+              <div class="sm-cassette-bottom"><b></b><b></b><b></b></div>
+            </div>
+            <span class="sm-spray sm-spray-one"></span><span class="sm-spray sm-spray-two"></span><span class="sm-crown">♛</span>
+          </section>
+
+          <section class="sm-stat-strip">
+            <article><span class="sm-stat-icon blue">♫</span><div><small>UKUPNO PESAMA</small><strong id="smTotalSongs">0</strong><em id="smSongsDelta">+0 ove nedelje</em></div></article>
+            <article><span class="sm-stat-icon yellow">▶</span><div><small>UKUPNO STREAMOVA</small><strong id="smTotalStreams">0</strong><em>+11.2%</em></div></article>
+            <article><span class="sm-stat-icon red">●</span><div><small>GENERISANO SA SUNO</small><strong id="smGeneratedSongs">0</strong><em id="smGeneratedDelta">+0 ove nedelje</em></div></article>
+            <article><span class="sm-stat-icon white">▥</span><div><small>SATI MUZIKE</small><strong id="smHoursMusic">0h</strong><em id="smHoursDelta">+0h ove nedelje</em></div></article>
+            <article><span class="sm-stat-icon gray">⇩</span><div><small>IZVEZENO</small><strong id="smExportedSongs">0</strong><em>+4 ove nedelje</em></div></article>
+          </section>
+
+          <section class="sm-recent-panel">
+            <div class="sm-tape-heading red"><span>NEDAVNE PESME</span></div>
+            <div id="smRecentList" class="sm-recent-list"></div>
+            <button class="sm-show-all" data-sm-view="library" type="button">PRIKAŽI SVE</button>
+          </section>
+        </div>
+
+        <div class="lc-home-dashboard" id="lcHomeDashboard">
+          <section class="lc-release-focus">
+            <div class="lc-cover-frame"><img id="lcHeroCover" alt="Omot aktivnog singla" hidden><div id="lcHeroCoverPlaceholder" class="lc-cover-placeholder"><span>NOĆAS</span><small>SUNO PESME</small></div><b>SP RELEASE</b></div>
+            <div class="lc-single-info">
+              <div class="lc-eyebrow">SINGL <i></i></div>
+              <h2 id="lcHeroTitle">Nijedna pesma nije izabrana</h2><h3 id="lcHeroArtist">Suno Pesme</h3>
+              <dl class="lc-meta-grid"><div><dt>ŽANR</dt><dd id="lcHeroGenre">—</dd></div><div><dt>TONALITET</dt><dd id="lcHeroKey">—</dd></div><div><dt>PODŽANR</dt><dd id="lcHeroSubgenre">—</dd></div><div><dt>TRAJANJE</dt><dd id="lcHeroDuration">00:00</dd></div><div><dt>RASPOLOŽENJE</dt><dd>Melanholično</dd></div><div><dt>IZDAVAČ</dt><dd>SPS LABEL</dd></div><div><dt>TEMPO</dt><dd id="lcHeroTempo">— BPM</dd></div><div><dt>KATALOG BROJ</dt><dd id="lcCatalogNumber">SPS 2026-001</dd></div></dl>
+              <div class="lc-status-row"><span class="done">✓ ZAVRŠENA</span><span class="mastered">◉ MASTERED</span><span class="ready">⌁ SPREMNO ZA OBJAVU</span></div>
+              <p id="lcHeroDescription">Izaberi pesmu iz biblioteke da bi Label Command prikazao kompletne podatke o singlu, status produkcije i plan objave.</p>
+              <div class="lc-action-row"><button id="lcPlayHero" class="lc-primary-action" type="button">▶ Preslušaj</button><button data-lc-view="release" type="button">Detalji</button><button data-lc-view="release" type="button">Uredi</button><button type="button">•••</button></div>
+            </div>
+          </section>
+          <section class="lc-catalog-panel">
+            <div class="lc-catalog-tabs"><span>ZADNJE PESME⌄</span><button class="active">SVE PESME</button><button>SINGLOVI</button><button>ALBUMI</button><button>EP</button><button>ARHIVA</button><div><button data-lc-view="library">⚑ Filteri</button><button>☷</button><button>▦</button></div></div>
+            <div class="lc-song-table"><div class="lc-song-head"><span>#</span><span>NASLOV</span><span>IZVOĐAČ</span><span>ALBUM / EP</span><span>ŽANR</span><span>TRAJANJE</span><span>STATUS</span><span>DODATO</span><span></span></div><div id="lcSongRows"></div></div>
+          </section>
+        </div>
+
+        <div class="vl-home-dashboard" id="vlHomeDashboard">
+          <section class="vl-stat-row">
+            <article><span>♫</span><div><small>UKUPNO PESAMA</small><strong id="vlTotalSongs">0</strong><em id="vlSongsDelta">+0 ovaj mesec</em></div></article>
+            <article><span>◉</span><div><small>UKUPNO ALBUMA</small><strong id="vlTotalAlbums">0</strong><em>+4 ovaj mesec</em></div></article>
+            <article><span>〰</span><div><small>UKUPNO STREAMOVA</small><strong id="vlTotalStreams">0</strong><em>+12,5% u odnosu na prošli mesec</em></div></article>
+            <article><span>◷</span><div><small>UKUPNO TRAJANJE</small><strong id="vlTotalDuration">0h</strong><em>Vaša celokupna biblioteka</em></div></article>
+          </section>
+          <section class="vl-recent-section">
+            <div class="vl-section-head"><strong>NEDAVNO DODATE PESME</strong><div><button data-vl-view="library">Prikaži sve</button><button id="vlRecentPrev" type="button">‹</button><button id="vlRecentNext" type="button">›</button></div></div>
+            <div id="vlRecentCards" class="vl-recent-cards"></div>
+            <div class="vl-carousel-dots"><i class="active"></i><i></i><i></i><i></i></div>
+          </section>
+          <section class="vl-list-section">
+            <div class="vl-section-head"><strong>LISTA PESAMA</strong><div><select id="vlListFilter"><option>Sve pesme</option><option>Omiljene</option><option>Nedavno dodate</option></select><button>☷</button><button>▦</button></div></div>
+            <div class="vl-song-table"><div class="vl-song-head"><span>#</span><span>NASLOV</span><span>IZVOĐAČ</span><span>ALBUM</span><span>ŽANR</span><span>◷</span><span>DODATO</span><span>♡</span><span></span></div><div id="vlSongRows"></div></div>
+          </section>
+        </div>
+
+        <div class="sg-home-dashboard" id="sgHomeDashboard">
+          <section class="sg-wave-module">
+            <div class="sg-module-title"><span>AKTIVNI TALASNI PRIKAZ</span><i></i></div>
+            <div class="sg-wave-grid"><div class="sg-axis"><span>-1.0</span><span>-0.5</span><span>0</span><span>+0.5</span><span>+1.0</span></div><div class="sg-main-wave"><div id="sgMainWaveBars" class="sg-wave-bars"></div><div id="sgMainWavePlayed" class="sg-wave-played"><div id="sgMainWavePlayedBars" class="sg-wave-bars"></div></div><div id="sgMainWaveCursor" class="sg-wave-cursor"></div><div class="sg-time-axis"><span>0:00</span><span>0:30</span><span>1:00</span><span>1:30</span><span>2:00</span><span>2:30</span><span>3:00</span><span>3:30</span></div></div><div class="sg-mini-meter"><span>L</span><span>R</span><div><i id="sgHomeMeterL"></i></div><div><i id="sgHomeMeterR"></i></div></div></div>
+          </section>
+          <section class="sg-library-module">
+            <div class="sg-filter-row"><label><input id="sgTableSearch" type="search" placeholder="TRAŽI PESMU..."><span>⌕</span></label><select><option>SVE ŽANROVE</option></select><select><option>SVI IZVOĐAČI</option></select><select><option>SVI ALBUMI</option></select><select><option>DODATO</option></select><button>☷</button><button class="active">▤</button><button>▦</button></div>
+            <div class="sg-tech-table"><div class="sg-tech-head"><span>#</span><span></span><span>NASLOV</span><span>IZVOĐAČ</span><span>ALBUM</span><span>ŽANR</span><span>TRAJANJE</span><span>BPM</span><span>TONALITET</span><span>DODATO</span><span></span></div><div id="sgSongRows"></div></div>
+            <div class="sg-table-footer"><span id="sgTableSummary">UKUPNO 0 PESAMA</span><div><span>STRANA 1 OD 1</span><button>‹</button><button>›</button></div></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-library" class="view">
+        <div class="toolbar panel library-toolbar">
+          <div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" name="suno_library_search_v171" placeholder="Pretraži naslov, tekst, prompt, stil, folder..." autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" readonly><button id="clearSearchBtn" class="search-clear" type="button" title="Očisti pretragu">×</button></div>
+          <select id="filterSelect">
+            <option value="all">Sve pesme</option><option value="downloaded">Preuzete</option><option value="not_downloaded">Nisu preuzete</option>
+            <option value="liked">Lajkovane na Suno</option><option value="favorites">Moji favoriti</option><option value="public">Javne</option>
+            <option value="with_text">Imaju tekst</option><option value="missing_text">Bez teksta</option><option value="long">Duže od 4 min</option><option value="instrumental">Instrumentalne</option><option value="recent_7d">Dodate poslednjih 7 dana</option><option value="new_today">Dodate danas</option><option value="published">Objavljene na kanalu</option><option value="unpublished">Nisu objavljene</option><option value="active">Aktivne</option><option value="archived">Arhivirane</option>
+          </select>
+          <select id="collectionFilter"><option value="0">Svi folderi</option></select>
+          <select id="sortSelect"><option value="newest">Najnovije</option><option value="oldest">Najstarije</option><option value="title">Naslov A–Š</option><option value="duration">Najduže</option><option value="rating">Najbolje ocenjene</option></select>
+          <button id="refreshSongsBtn" class="icon-btn" title="Osveži">↻</button>
+        </div>
+        <details class="panel advanced-filter-panel"><summary>Napredni filteri: datum, trajanje i Workspace</summary><div class="advanced-filter-grid"><label>Od datuma<input id="dateFromFilter" type="date"></label><label>Do datuma<input id="dateToFilter" type="date"></label><label>Min. trajanje (sek)<input id="minDurationFilter" type="number" min="0" value="0"></label><label>Maks. trajanje (sek)<input id="maxDurationFilter" type="number" min="0" value="0"></label><label>Izvor / Workspace<select id="sourceFilter"><option value="">Svi izvori</option></select></label><div class="filter-buttons"><button id="applyAdvancedFiltersBtn" class="btn primary small">Primeni</button><button id="clearAdvancedFiltersBtn" class="btn ghost small">Očisti</button></div></div></details>
+
+        <div class="selection-bar panel">
+          <label class="check-label"><input id="selectAll" type="checkbox"> Izaberi sve prikazane</label>
+          <div><strong id="selectedCount">0</strong> izabrano</div>
+          <div class="selection-actions">
+            <select id="bulkCollectionSelect"><option value="">Dodaj u folder...</option></select>
+            <button id="bulkAddFolderBtn" class="btn small secondary">Dodaj</button>
+            <button id="saveSelectedToFolderBtn" class="btn small secondary">Sačuvaj u moj folder</button>
+            <button id="quickMp3Btn" class="btn small primary">Preuzmi MP3</button>
+            <button id="exportSelectedBtn" class="btn small secondary">Izvezi paket</button>
+            <button id="clearSelectionBtn" class="btn small ghost">Poništi</button>
+          </div>
+        </div>
+        <div id="librarySummary" class="summary-line"></div>
+        <div id="songsGrid" class="songs-grid"></div>
+        <div id="libraryPagination" class="panel pagination-bar"><button id="prevPageBtn" class="btn ghost small">← Prethodna</button><span id="pageInfo">Strana 1</span><label>Po strani<select id="pageSizeSelect"><option value="50">50</option><option value="100" selected>100</option><option value="200">200</option></select></label><button id="nextPageBtn" class="btn ghost small">Sledeća →</button></div>
+        <div id="emptyLibrary" class="empty hidden"><div class="empty-icon">♫</div><h2 id="emptyLibraryTitle">Biblioteka je prazna</h2><p id="emptyLibraryText">Poveži Suno nalog i pokreni sinhronizaciju.</p><button id="emptyLibraryAction" class="btn primary" data-go="import">Otvori uvoz</button></div>
+      </section>
+
+      <section id="view-folders" class="view">
+        <div class="panel folder-create">
+          <div><h2>Folderi za organizaciju pesama</h2><p class="muted">Ugrađeni folderi su „Odrađene duže pesme“ i „Objavljena pesma na kanalu“. Možeš da praviš i svoje.</p></div>
+          <div class="inline-form"><input id="newFolderName" placeholder="Naziv novog foldera"><input id="newFolderColor" type="color" value="#7c3aed"><button id="createFolderBtn" class="btn primary">Napravi folder</button></div>
+        </div>
+        <div id="foldersGrid" class="folders-grid"></div>
+        <div class="panel form-panel">
+          <h2>Dodaj izabrane pesme u folder</h2>
+          <p class="muted">Trenutno je izabrano <strong id="folderSelectedCount">0</strong> pesama u Biblioteci.</p>
+          <div class="inline-form"><select id="folderBulkTarget"></select><button id="folderBulkAddBtn" class="btn primary">Dodaj izabrane</button></div>
+        </div>
+      </section>
+
+      <section id="view-audio" class="view">
+        <div class="panel audio-landing">
+          <div class="big-tool-icon">✂</div>
+          <div><h2>Skraćivanje i obrada MP3/WAV pesama</h2><p>Možeš da isečeš početak i kraj, napraviš klip od 15/30/60 sekundi, dodaš fade, promeniš glasnoću, normalizuješ zvuk, ukloniš tišinu i izvezeš MP3, WAV, FLAC ili M4A.</p>
+          <p class="muted">Otvori pesmu u Biblioteci, pa izaberi karticu <strong>Audio obrada</strong>.</p>
+          <div class="button-row"><button id="openSelectedAudioBtn" class="btn primary">Otvori izabranu pesmu</button><button id="prepareAudioToolsBtn" class="btn secondary">Pripremi FFmpeg alate</button></div><div id="audioToolsStatus" class="inline-message"></div></div>
+        </div>
+        <div class="feature-grid">
+          <div class="panel mini-feature"><strong>✂ Precizan isečak</strong><span>Početak i kraj u sekundama, uz pregled pre izvoza.</span></div>
+          <div class="panel mini-feature"><strong>🔊 Glasnoća</strong><span>Normalizacija, pojačanje ili utišavanje do ±30 dB.</span></div>
+          <div class="panel mini-feature"><strong>〰 Fade</strong><span>Postepeni ulaz i izlaz bez grubog prekida.</span></div>
+          <div class="panel mini-feature"><strong>⇄ Konverzija</strong><span>MP3, WAV, FLAC i M4A, bitrate i sample rate.</span></div>
+        </div>
+      </section>
+
+      <section id="view-download" class="view">
+        <div class="two-col">
+          <div class="panel form-panel"><div class="section-title"><div><span class="step">1</span><h2>Izbor pesama</h2></div></div><p class="muted">Preuzimaju se pesme označene u Biblioteci.</p><div class="big-number"><strong id="downloadSelectedCount">0</strong><span>izabranih pesama</span></div><div class="button-row"><button id="goLibraryBtn" class="btn secondary">Idi u biblioteku</button><button id="selectNotDownloadedBtn" class="btn ghost">Izaberi nepreuzete</button></div></div>
+          <div class="panel form-panel"><div class="section-title"><div><span class="step">2</span><h2>Format zvuka</h2></div></div><div class="format-cards"><label class="format-card active"><input type="radio" name="audioFormat" value="mp3" checked><strong>MP3</strong><span>Za YouTube, telefon i arhivu</span></label><label class="format-card"><input type="radio" name="audioFormat" value="wav"><strong>WAV</strong><span>Kada ga Suno omogući</span></label><label class="format-card"><input type="radio" name="audioFormat" value="both"><strong>MP3 + WAV</strong><span>Kompletna kopija</span></label></div></div>
+        </div>
+        <div class="panel form-panel">
+          <div class="section-title"><div><span class="step">3</span><h2>Folder na računaru</h2></div></div>
+          <div class="folder-path-row"><input id="downloadTargetInput" placeholder="C:\Moje Suno pesme"><button id="chooseDownloadTargetBtn" class="btn secondary">Izaberi folder</button></div>
+          <label>Podfolder kolekcije<select id="downloadCollectionSubfolder"><option value="0">Bez posebnog podfoldera</option></select></label>
+        </div>
+        <div class="panel form-panel">
+          <div class="section-title"><div><span class="step">4</span><h2>Šta se čuva uz pesmu</h2></div></div>
+          <div class="option-grid">
+            <label class="toggle-row"><input id="optCover" type="checkbox" checked><span><strong>Omot</strong><small>JPG slika</small></span></label>
+            <label class="toggle-row"><input id="optLyrics" type="checkbox" checked><span><strong>Tekst</strong><small>TXT fajl</small></span></label>
+            <label class="toggle-row"><input id="optSynced" type="checkbox" checked><span><strong>LRC i SRT</strong><small>Stvarni tajming kada postoji</small></span></label>
+            <label class="toggle-row"><input id="optMetadata" type="checkbox" checked><span><strong>JSON</strong><small>Svi Suno podaci</small></span></label>
+            <label class="toggle-row"><input id="optEmbed" type="checkbox" checked><span><strong>ID3 podaci</strong><small>Naslov, tekst, omot i stil u MP3</small></span></label>
+            <label class="toggle-row"><input id="optVideo" type="checkbox"><span><strong>Suno video</strong><small>MP4 kada postoji</small></span></label>
+            <label class="toggle-row"><input id="optMonthFolders" type="checkbox"><span><strong>Folder po mesecu</strong><small>Na primer 2026-07</small></span></label>
+            <label class="toggle-row"><input id="optOverwrite" type="checkbox"><span><strong>Prepiši postojeće</strong><small>Ponovo preuzmi fajlove</small></span></label>
+          </div>
+          <div class="panel compact-form download-performance"><h3>Brzina i red preuzimanja</h3><div class="two-inputs"><label>Paralelna preuzimanja<select id="parallelDownloads"><option value="1">1 — najstabilnije</option><option value="2" selected>2 — preporučeno</option><option value="3">3</option><option value="4">4 — najbrže</option></select></label><label>Ograničenje brzine<select id="downloadRateLimit"><option value="0">Bez ograničenja</option><option value="5">5 Mbps</option><option value="10">10 Mbps</option><option value="20">20 Mbps</option><option value="50">50 Mbps</option></select></label></div><p class="muted">Aktivni posao možeš da pauziraš i nastaviš iz panela na vrhu. Nedovršeni poslovi ostaju u redu posle restarta.</p></div>
+          <div class="download-footer"><div><span>Folder:</span><strong id="downloadFolderLabel">Preuzete_pesme</strong></div><button id="startDownloadBtn" class="btn primary large">Pokreni preuzimanje</button></div>
+        </div>
+      </section>
+
+      <section id="view-import" class="view">
+        <div class="connect-hero panel"><div class="connect-art">S</div><div><h2>Poveži svoj Suno nalog</h2><p>Program otvara poseban Chrome/Edge/Brave profil. Lozinka ne prolazi kroz program.</p><ol><li>Klikni „Otvori Suno prijavu“.</li><li>Prijavi se u otvorenom prozoru.</li><li>Vrati se i klikni „Proveri vezu“.</li></ol><div class="button-row"><button id="openSunoLoginBtn" class="btn primary">Otvori Suno prijavu</button><button id="checkSunoBtn" class="btn secondary">Proveri vezu</button><button id="testServerBtn" class="btn ghost">Test lokalnog servera</button></div><div id="connectMessage" class="inline-message"></div><div id="connectDiagnostics" class="diagnostics-box hidden"></div><details class="manual-token-box"><summary>Rezervno povezivanje ručnim Suno tokenom</summary><p class="muted">Koristi samo kada automatsko povezivanje ne radi. Token ostaje samo u memoriji programa i ne čuva se u bazi.</p><textarea id="manualSunoToken" rows="3" placeholder="Nalepi Bearer token bez reči Bearer"></textarea><button id="connectManualTokenBtn" class="btn secondary small">Poveži ručnim tokenom</button></details></div></div>
+        <div class="two-col">
+          <div class="panel form-panel"><h2>Sinhronizuj ceo nalog</h2><p class="muted">Čita glavnu biblioteku i Workspaces / Studio Projects.</p><label>Najviše paketa<input id="syncPages" type="number" min="1" max="1000" value="100"></label><label class="check-label"><input id="syncMainLibrary" type="checkbox" checked> Glavna biblioteka</label><label class="check-label"><input id="syncWorkspaces" type="checkbox" checked> Workspaces / Studio Projects</label><label class="check-label"><input id="syncLikedOnly" type="checkbox"> Samo lajkovane</label><label class="check-label"><input id="syncRefreshDetails" type="checkbox"> Dopuni detalje svake pesme</label><label class="check-label"><input id="syncResume" type="checkbox" checked> Nastavi prekinutu sinhronizaciju od poslednjeg paketa</label><div class="button-row"><button id="startSyncBtn" class="btn primary">UVEZI SVE MOJE PESME</button><button id="resetSyncCheckpointBtn" class="btn ghost">Resetuj sačuvani nastavak</button></div><div id="syncCheckpointStatus" class="inline-message"></div></div>
+          <div class="panel form-panel"><h2>Uvezi Suno linkove</h2><textarea id="urlImportText" rows="8" placeholder="https://suno.com/song/...&#10;https://suno.com/playlist/..."></textarea><button id="importUrlsBtn" class="btn secondary full">Uvezi linkove</button></div>
+        </div>
+        <div class="panel form-panel new-check-panel"><div><h2>Proveri da li ima novih pesama</h2><p class="muted">Brzo čita samo najnovije pakete iz glavne biblioteke i svih Workspaces, bez ponovnog prolaska kroz ceo nalog.</p><div id="lastNewCheckLabel" class="inline-message"></div></div><div class="button-row"><button id="checkNewImportBtn" class="btn success">PROVERI NOVE PESME</button><label class="check-label"><input id="newCheckRefreshDetails" type="checkbox"> Dopuni detalje novih pesama</label></div></div>
+        <div class="panel form-panel"><h2>Uvezi i trajno zapamti lokalni folder</h2><p class="muted">Skenira MP3, WAV, FLAC, M4A, AAC i OGG. Pesme i prateći TXT/JSON/LRC/SRT/omoti čuvaju se u trajnoj Biblioteci i ne moraju ponovo da se ubacuju posle restarta.</p><div class="folder-path-row"><input id="localFolderInput" placeholder="C:\Muzika\Suno"><button id="chooseLocalFolderBtn" class="btn ghost">Izaberi folder</button><button id="importFolderBtn" class="btn secondary">Uvezi i zapamti</button></div></div>
+        <div class="panel form-panel"><div class="section-title"><div><h2>Zapamćeni lokalni folderi</h2><p class="muted">Program pamti svaki uvezeni folder. Sledeća provera traži samo nove ili promenjene pesme i preskače duplikate.</p></div><div class="button-row"><button id="refreshWatchedFoldersBtn" class="btn ghost small">Osveži listu</button><button id="rescanWatchedFoldersBtn" class="btn success">PROVERI SVE ZAPAMĆENE FOLDERE</button></div></div><div id="watchedFoldersList" class="youtube-matches-list"></div></div>
+      </section>
+
+      <section id="view-recognition" class="view">
+        <div class="youtube-command-center">
+          <div class="tools-hero panel"><div><h2>PRONALAZAČ MOJIH PESAMA</h2><p class="muted">Ubaci Shorts, video ili audio. Program proverava da li sadrži neku pesmu iz tvoje biblioteke — lokalno ili direktno sa Suno servera, bez trajnog čuvanja fajlova. Nije potreban token.</p></div><div class="tool-status"><strong id="songFinderIndexedCount">0</strong><span>indeksiranih pesama</span></div></div>
+          <div id="songFinderNoAudioWarning" class="panel inline-message error hidden"><strong>Nijedna od tvojih pesama nema dostupan audio izvor, zato nema šta da se indeksira.</strong><br>Ovo obično znači da pesme nisu ni sinhronizovane sa Suno naloga. Program NE mora prvo da preuzme sve pesme na disk — indeksiranje samostalno pravi otisak pesme direktno sa Suno servera (čuva se samo mali otisak, ne cela pesma), a ako je neka pesma već ranije preuzeta, koristi taj fajl. Ako ipak želiš da trajno sačuvaš MP3/WAV fajlove, to i dalje možeš u kartici „Preuzimanje”.<div class="button-row" style="margin-top:8px"><button id="songFinderGoDownloadBtn" class="btn ghost small">IDI NA PREUZIMANJE</button></div></div>
+          <div class="two-col">
+            <div class="youtube-action-card">
+              <h3>Indeks mojih pesama</h3>
+              <p>Automatski se osvežava kad pokreneš program. Koristi se već preuzet fajl ako postoji, a ako ne, otisak se pravi direktno sa Suno servera bez trajnog čuvanja cele pesme. Nepromenjene pesme se ne obrađuju ponovo.</p>
+              <div id="songFinderIndexStatus" class="inline-message">Indeksiranje još nije pokrenuto.</div>
+              <div class="button-stack"><button id="songFinderIndexAllBtn" class="btn primary small">INDEKSIRAJ SVE MOJE PESME</button><button id="songFinderIndexRefreshBtn" class="btn secondary small">OSVEŽI IZMENJENE</button><button id="songFinderIndexRebuildBtn" class="btn ghost small">OBRIŠI I PONOVO NAPRAVI INDEKS</button></div>
+            </div>
+            <div class="youtube-action-card">
+              <h3>Ubaci Shorts / video / audio</h3>
+              <label class="check-label"><input id="songFinderAutoCheck" type="checkbox" checked> Automatski pronađi moju pesmu posle ubacivanja</label>
+              <div class="folder-path-row"><input id="songFinderPath" placeholder="Izaberi MP3, WAV, M4A, AAC, FLAC, OGG, WEBM, MP4, MOV ili MKV"><button id="chooseSongFinderFileBtn" class="btn ghost">Izaberi fajl</button></div>
+              <div class="button-stack"><button id="analyzeSongFinderBtn" class="btn primary">PRONAĐI MOJU PESMU</button><button id="chooseSongFinderBatchBtn" class="btn secondary">UBACI VIŠE FAJLOVA ODJEDNOM</button></div>
+              <div id="songFinderStatus" class="inline-message">Nijedan token nije potreban za ovu proveru.</div>
+              <div id="songFinderResult" class="youtube-matches-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel form-panel"><div class="section-title"><div><h2>Rezultati</h2><p class="muted">Izaberi stari rezultat ili ponovi analizu.</p></div><button id="refreshSongFinderResultsBtn" class="btn ghost small">Osveži</button></div><div id="songFinderResults" class="youtube-matches-list"></div></div>
+        <details class="panel form-panel">
+          <summary><h2 style="display:inline">Opcioni internet servisi</h2></summary>
+          <p class="muted">Ovo NIJE Pronalazač mojih pesama iznad — ovo je zaseban, potpuno opcioni alat za prepoznavanje NEPOZNATE komercijalne pesme preko internet servisa AudD. Nikad se ne pokreće automatski i ne utiče na lokalnu proveru iznad.</p>
+          <h3>Prepoznaj nepoznatu komercijalnu pesmu preko AudD</h3>
+          <div class="folder-path-row"><input id="musicRecognitionPath" placeholder="Izaberi MP3, WAV, M4A, MP4, MOV, MKV ili WEBM"><button id="chooseMusicRecognitionFileBtn" class="btn ghost">Izaberi fajl</button></div>
+          <input id="musicRecognitionFile" class="hidden" type="file" accept="audio/*,video/*">
+          <div class="two-inputs"><label>Početak isečka u sekundama<input id="musicRecognitionStart" type="number" min="0" step="0.1" value="0"></label><label>Trajanje analize<input id="musicRecognitionDuration" type="number" min="8" max="45" step="1" value="25"></label></div>
+          <label>AudD API token<input id="auddToken" type="password" placeholder="Nalepi token sa AudD naloga"></label>
+          <div class="button-row"><button id="saveAuddTokenBtn" class="btn secondary">SAČUVAJ TOKEN</button><button id="recognizeMusicBtn" class="btn primary">PRONAĐI PREKO AudD</button><button id="openRecognitionFolderBtn" class="btn ghost">Otvori folder</button></div>
+          <div id="musicRecognitionStatus" class="inline-message">Najbolji rezultat daje čist isečak od 8–25 sekundi bez glasnog govora preko muzike.</div>
+          <div id="musicRecognitionResult" class="youtube-matches-list"></div>
+          <div class="section-title"><div><h3>Istorija AudD pokušaja</h3></div><button id="refreshRecognitionHistoryBtn" class="btn ghost small">Osveži</button></div>
+          <div id="musicRecognitionHistory" class="youtube-matches-list"></div>
+        </details>
+      </section>
+
+      <section id="view-smart" class="view">
+        <div class="panel form-panel">
+          <div class="section-title"><div><h2>Pravila (I/ILI)</h2><p class="muted">Kombinuj pravila po poljima pesme. Rezultat je uvek živ pregled trenutne biblioteke, ne kopija — ništa se ne premešta niti duplira.</p></div><label>Uslov<select id="smartMatchMode"><option value="all">Sva pravila (I)</option><option value="any">Bilo koje pravilo (ILI)</option></select></label></div>
+          <div id="smartRulesList" class="smart-rules-list"></div>
+          <div class="button-row"><button id="smartAddRuleBtn" class="btn ghost small">+ Dodaj pravilo</button><button id="smartPreviewBtn" class="btn secondary">Prikaži pesme</button></div>
+          <div class="two-inputs" style="margin-top:10px"><label>Naziv pametne kolekcije<input id="smartCollectionName" placeholder="npr. Neobjavljene duže pesme"></label><div class="button-row" style="align-items:flex-end"><button id="smartSaveBtn" class="btn primary">Sačuvaj kao pametnu kolekciju</button></div></div>
+        </div>
+        <div class="panel form-panel">
+          <div class="section-title"><h2>Rezultat pretrage</h2><span id="smartPreviewCount" class="muted"></span></div>
+          <div id="smartPreviewList" class="file-list"></div>
+          <div class="button-row"><button id="smartSelectAllBtn" class="btn secondary small">Izaberi sve prikazane</button><button id="smartGoLibraryBtn" class="btn ghost small">Otvori izbor u Biblioteci</button></div>
+        </div>
+        <div class="panel form-panel">
+          <div class="section-title"><h2>Sačuvane pametne kolekcije</h2><button id="smartRefreshBtn" class="btn ghost small">Osveži</button></div>
+          <div id="smartCollectionsList" class="file-list"></div>
+        </div>
+      </section>
+
+      <section id="view-versions" class="view">
+        <div class="panel form-panel">
+          <div class="section-title"><div><h2>Nova grupa verzija</h2><p class="muted">Izaberi 2 ili više pesama u Biblioteci (verzije iste pesme) pa ih ovde poredi A/B/C, oceni i označi glavnu (master) verziju.</p></div></div>
+          <div class="two-inputs"><label>Naziv grupe<input id="versionGroupName" placeholder="npr. Nedostaješ mi — verzije"></label><div class="button-row" style="align-items:flex-end"><button id="versionCreateGroupBtn" class="btn primary">Napravi grupu od izabranih</button></div></div>
+        </div>
+        <div id="versionGroupsList" class="version-groups-list"></div>
+      </section>
+
+      <section id="view-release" class="view">
+        <div class="panel form-panel">
+          <div class="section-title"><div><h2>Spremnost za objavu</h2><p class="muted">Izaberi pesme u Biblioteci pa ovde vidi šta svaka ima spremno: audio, omot, tekst, titlove, stemove i da li je već objavljena na YouTube.</p></div><button id="releaseRefreshBtn" class="btn secondary small">Osveži prikaz izabranih</button></div>
+          <div id="releaseReadinessTable" class="release-readiness-table"></div>
+        </div>
+        <div class="panel form-panel">
+          <h3>Napravi release folder</h3>
+          <p class="muted">Za svaku izabranu pesmu pravi se poseban podfolder sa kopijama audia, omota, teksta, LRC/SRT i stemova (ako postoje). Originali se ne menjaju niti premeštaju.</p>
+          <div class="folder-path-row"><input id="releaseTargetFolder" placeholder="Folder za release pakete"><button id="releaseChooseFolderBtn" class="btn ghost small">Izaberi</button></div>
+          <button id="releaseBuildBtn" class="btn primary full">Napravi release foldere za izabrane pesme</button>
+        </div>
+      </section>
+
+      <section id="view-tools" class="view">
+        <div class="tools-hero panel"><div><h2>Pametni alati za biblioteku</h2><p class="muted">Masovne radnje, izveštaji, brzi klipovi, backup i organizacija. Sve radnje rade samo nad izabranim pesmama, osim kada piše „cela biblioteka“.</p></div><div class="tool-status"><strong id="toolsSelectedCount">0</strong><span>izabranih pesama</span></div></div>
+        <div class="panel youtube-command-center">
+          <div class="section-title"><div><h2>YouTube kanali, datumi objava i zaštita pesama</h2><p class="muted">Dodaj dva ili više svojih kanala, proveri sve javne objave, poveži ih sa Suno pesmama i pronađi moguće objave na tuđim kanalima.</p></div><div id="youtubeSummaryBadges" class="youtube-summary-badges"></div></div>
+          <div class="youtube-oauth-connect">
+            <div class="youtube-google-icon">G</div>
+            <div class="youtube-oauth-main">
+              <div class="section-title"><div><h3>Poveži YouTube preko Google naloga</h3><p class="muted">Klikni jedno dugme i izaberi svoj mejl u zvaničnom Google prozoru. Program zatim sam pronalazi YouTube kanale tog naloga. Lozinku nikada ne unosiš u ovaj program.</p></div><span id="youtubeOAuthBadge" class="oauth-badge">Nije povezano</span></div>
+              <div class="youtube-oauth-actions simplified">
+                <button id="connectYoutubeGoogleBtn" class="btn success large">POVEŽI YOUTUBE — IZABERI SVOJ MEJL</button>
+                <button id="refreshYoutubeGoogleBtn" class="btn secondary">Osveži moje kanale</button>
+              </div>
+              <div id="youtubeOAuthStatus" class="inline-message">Google nalog još nije povezan.</div>
+              <div id="youtubeOAuthProfiles" class="youtube-oauth-profiles"></div>
+              <details id="youtubeOAuthFirstSetup" class="youtube-first-setup">
+                <summary>Samo prvi put: pripremi Google prijavu</summary>
+                <p class="muted">Google zahteva OAuth klijent za svaku desktop aplikaciju. Jednom izaberi JSON fajl tipa <strong>Desktop app</strong>; posle toga se YouTube povezuje samo izborom mejla.</p>
+                <div class="button-row"><button id="importYoutubeOAuthClientBtn" class="btn primary">Izaberi Google OAuth JSON</button><button id="openGoogleCloudClientsBtn" class="btn ghost">Otvori Google Cloud klijente</button><button id="removeYoutubeOAuthConfigBtn" class="btn danger small">Ukloni Google prijavu</button></div>
+                <div id="youtubeOAuthConfigStatus" class="inline-message"></div>
+              </details>
+            </div>
+          </div>
+          <details class="youtube-advanced-settings">
+            <summary>Napredna rezervna podešavanja</summary>
+            <div class="youtube-setup-grid">
+              <div class="youtube-settings-box">
+                <h3>Rezervni YouTube Data API ključ</h3>
+                <p class="muted">Nije potreban kada je Google nalog povezan. Koristi se samo kao rezervni javni pristup.</p>
+                <label>API ključ<input id="youtubeApiKeyInput" type="password" placeholder="AIza..."></label>
+                <label>Ime vlasnika prava<input id="copyrightOwnerNameInput" placeholder="Ime i prezime ili ovlašćeni predstavnik"></label><label>Browser za privatne/unlisted YouTube videe<select id="youtubeCookiesBrowser"><option value="none">Ne koristi browser kolačiće</option><option value="chrome">Chrome</option><option value="edge">Edge</option><option value="brave">Brave</option><option value="firefox">Firefox</option><option value="opera">Opera</option><option value="vivaldi">Vivaldi</option></select></label><p class="muted">Izaberi browser u kojem si prijavljen na YouTube. Program koristi samo lokalnu yt-dlp opciju za čitanje videa kojima već imaš pristup; ne čuva mejl ni lozinku.</p>
+                <div class="button-row"><button id="saveYoutubeSettingsBtn" class="btn primary">Sačuvaj napredna podešavanja</button><button id="clearYoutubeApiKeyBtn" class="btn ghost">Ukloni API ključ</button></div>
+                <div id="youtubeKeyStatus" class="inline-message"></div>
+              </div>
+              <div class="youtube-settings-box">
+                <h3>Ručno dodaj javni kanal</h3>
+                <p class="muted">Koristi samo za kanal koji nije vezan za tvoj Google nalog.</p>
+                <label>Kanal, @handle ili channel ID<input id="youtubeChannelInput" placeholder="https://youtube.com/@mojkanal"></label>
+                <label class="check-label"><input id="youtubeChannelOwned" type="checkbox" checked> Ovo je moj kanal / kanal koji imam pravo da pratim kao svoj</label>
+                <button id="addYoutubeChannelBtn" class="btn secondary full">DODAJ KANAL RUČNO</button>
+              </div>
+            </div>
+          </details>
+          <div id="youtubeChannelsList" class="youtube-channels-list"></div>
+          <div class="youtube-action-grid">
+            <div class="youtube-action-card"><h3>Proveri moje kanale</h3><p>Čita njihove Uploads plejliste, pronalazi tvoje pesme i automatski upisuje datum objave i YouTube link.</p><label>Najviše paketa po kanalu<input id="youtubeChannelScanPages" type="number" min="1" max="100" value="20"></label><label>Režim<select id="youtubeChannelScanMode"><option value="new" selected>Brza provera novih videa</option><option value="full">Kompletna provera celog kanala</option></select></label><button id="scanOwnedYoutubeBtn" class="btn success full">PROVERI SVE MOJE KANALE</button></div>
+            <div class="youtube-action-card"><h3>Pretraži ceo YouTube</h3><p>Koristi više varijanti naslova, autora i prvog prepoznatljivog stiha. Radi preko Google/YouTube API-ja, a kada API nije dostupan automatski prelazi na ugrađeni yt-dlp + Deno režim.</p><div class="two-inputs"><label>Najviše pesama<input id="youtubeGlobalMaxSongs" type="number" min="1" max="500" value="50"></label><label>Minimalna sličnost %<input id="youtubeMatchThreshold" type="number" min="35" max="100" value="62"></label></div><div class="two-inputs"><label>Varijante upita po pesmi<input id="youtubeQueryVariants" type="number" min="1" max="5" value="3"></label><label>Rezultata po upitu<input id="youtubeResultsPerQuery" type="number" min="5" max="50" value="20"></label></div><label>Stranice prvog upita<select id="youtubeSearchPages"><option value="1" selected>1 — štedi kvotu</option><option value="2">2 — dublja pretraga</option></select></label><label class="check-label"><input id="youtubeIncludeOwnedGlobal" type="checkbox" checked> Uključi i moje YouTube kanale u rezultate</label><label class="check-label"><input id="youtubeSearchSelectedOnly" type="checkbox" checked> Pretraži samo izabrane pesme; ako nijedna nije izabrana, koristi prve pesme iz biblioteke</label><label class="check-label"><input id="youtubeAutoConfirmAudio" type="checkbox"> Automatski audio-potvrdi najbolje kandidate (troši vreme i internet po videu)</label><label>Najviše automatskih audio potvrda po pretrazi<input id="youtubeAutoConfirmBudget" type="number" min="0" max="20" value="5"></label><button id="scanGlobalYoutubeBtn" class="btn danger full">PRETRAŽI CEO YOUTUBE</button><p class="muted">Naslov je uvek samo kandidat. Bez audio potvrde rezultat ostaje označen „SAMO NASLOV“ dok ga ručno ili automatski ne potvrdiš.</p></div>
+            <div class="youtube-action-card legal-card"><h3>Kontakt i uklanjanje</h3><p>Program pravi dokazni paket, poruku za kontakt i otvara zvanične YouTube alate. Ne šalje pravnu prijavu bez tvoje konačne provere i klika.</p><div class="button-stack"><button id="openCopyrightMatchBtn" class="btn secondary">Otvori YouTube Copyright Match</button><button id="openCopyrightHelpBtn" class="btn ghost">Otvori zvanični zahtev za uklanjanje</button></div><p class="warning-text">Pre slanja proveri vlasništvo, licencu, dozvolu i mogući fair use. Lažna prijava može imati pravne posledice.</p></div>
+          </div>
+          <div class="youtube-audio-lab">
+            <div class="section-title"><div><h2>YouTube ↔ Suno audio prepoznavanje</h2><p class="muted">Program preuzima zvuk samo sa kanala koje si označio kao svoje, pravi lokalni audio-otisak i pronalazi originalnu Suno pesmu čak i kada je YouTube naslov drugačiji. Zatim meri da li je objavljena cela pesma, skraćena verzija ili samo isečak.</p></div><div id="youtubeAudioSummaryBadges" class="youtube-summary-badges"></div></div>
+            <div class="youtube-audio-controls">
+              <div class="youtube-settings-box">
+                <h3>Audio alati</h3>
+                <div id="ytdlpStatus" class="inline-message">Proveravam yt-dlp...</div>
+                <button id="installYtdlpBtn" class="btn secondary full">INSTALIRAJ / AŽURIRAJ YT-DLP</button>
+                <p class="muted">yt-dlp je open-source alat za preuzimanje zvuka iz tvojih javnih YouTube objava. Audio se čuva samo u lokalnom kešu radi poređenja.</p>
+              </div>
+              <div class="youtube-settings-box">
+                <h3>Obim analize</h3>
+                <div class="two-inputs"><label>Najviše videa po kanalu<input id="youtubeAudioMaxVideos" type="number" min="1" max="500" value="100"></label><label>Broj Suno kandidata<input id="youtubeAudioCandidateLimit" type="number" min="4" max="40" value="16"></label></div>
+                <label>Režim provere<select id="youtubeAudioScanMode"><option value="new" selected>Samo novi / još neanalizirani videi</option><option value="uncertain">Ponovi nepouzdane i neuspešne</option><option value="all">Ponovo proveri sve videe</option></select></label>
+                <div class="two-inputs"><label>Najviše pesama u jednom videu<input id="youtubeAudioMaxSongsPerVideo" type="number" min="1" max="20" value="6"></label><label>Keš zadrži dana<input id="youtubeAudioCacheDays" type="number" min="1" max="365" value="30"></label></div>
+                <label class="check-label"><input id="youtubeAudioSelectedOnly" type="checkbox"> Analiziraj samo Suno pesme izabrane u Biblioteci</label>
+                <label class="check-label"><input id="youtubeAudioDetectMultiple" type="checkbox" checked> Prepoznaj više Suno pesama u jednom videu / mixu</label>
+                <label class="check-label"><input id="youtubeAudioDeep" type="checkbox"> Duboka provera — sporija, proverava više kandidata</label>
+                <label class="check-label"><input id="youtubeAudioReuseCache" type="checkbox" checked> Koristi postojeći audio-keš i otiske</label>
+                <label class="check-label"><input id="youtubeAudioForce" type="checkbox"> Ponovo napravi sve audio-otiske</label>
+              </div>
+              <div class="youtube-settings-box youtube-audio-start-box">
+                <h3>Pokreni proveru</h3>
+                <button id="analyzeOwnedYoutubeAudioBtn" class="btn success full">ANALIZIRAJ PESME SA MOJIH KANALA</button>
+                <button id="buildSunoFingerprintIndexBtn" class="btn secondary full">NAPRAVI BRZI SUNO AUDIO INDEKS</button>
+                <button id="exportYoutubeCoverageReportBtn" class="btn primary full">IZVEZI ŠTA JE KOMPLETNO / ŠTA NEDOSTAJE</button>
+                <button id="exportYoutubeAudioReportBtn" class="btn secondary full">IZVEZI SVE AUDIO REZULTATE</button>
+                <button id="cleanupYoutubeAudioCacheBtn" class="btn ghost full">OČISTI STARI AUDIO KEŠ</button>
+                <p class="warning-text">Rezultat je tehnička procena. Kod važnih odluka poslušaj pronađeni segment i potvrdi ručno.</p>
+              </div>
+            </div>
+            <div class="youtube-manual-analyze panel-subsection">
+              <div><h3>Analiziraj jedan YouTube video po linku</h3><p class="muted">Nalepi link sa svog kanala. Program sam čita naslov i trajanje, preuzima audio, pronalazi jedan ili više Suno originala i pokazuje tačne delove koji nedostaju.</p></div>
+              <div class="folder-path-row"><input id="youtubeManualVideoUrl" placeholder="https://www.youtube.com/watch?v=..."><button id="analyzeYoutubeUrlBtn" class="btn success">ANALIZIRAJ LINK</button></div>
+              <label class="check-label"><input id="youtubeManualOwned" type="checkbox" checked> Ovaj video je sa mog kanala</label>
+            </div>
+          </div>
+        </div>
+        <div class="tool-grid">
+          <div class="panel tool-card"><h3>Nove Suno pesme</h3><p>Brza provera glavne biblioteke i Workspaces.</p><button id="toolCheckNewBtn" class="btn success full">Proveri nove pesme</button><label>Automatska provera<select id="autoCheckMinutes"><option value="0">Isključeno</option><option value="5">Na 5 minuta</option><option value="15">Na 15 minuta</option><option value="30">Na 30 minuta</option><option value="60">Na 60 minuta</option></select></label><label class="check-label"><input id="notifyNewSongs" type="checkbox" checked> Obavesti me kada nađe nove pesme</label></div>
+          <div class="panel tool-card"><h3>Brza audio obrada</h3><p>Masovno napravi klipove ili normalizovane verzije.</p><div class="button-stack"><button class="btn secondary tool-audio-preset" data-preset="shorts30">Napravi 30 s klipove</button><button class="btn secondary tool-audio-preset" data-preset="shorts60">Napravi 60 s klipove</button><button class="btn secondary tool-audio-preset" data-preset="normalize">Normalizuj izabrane</button><button class="btn secondary tool-audio-preset" data-preset="fade">Dodaj fade izabranima</button></div></div>
+          <div class="panel tool-card"><h3>Favoriti i ocene</h3><div class="button-stack"><button id="bulkFavoriteBtn" class="btn secondary">Dodaj u favorite</button><button id="bulkUnfavoriteBtn" class="btn ghost">Ukloni iz favorita</button><label>Postavi ocenu<select id="bulkRatingSelect"><option value="0">Bez ocene</option><option value="1">1 zvezdica</option><option value="2">2 zvezdice</option><option value="3">3 zvezdice</option><option value="4">4 zvezdice</option><option value="5">5 zvezdica</option></select></label><button id="bulkRatingBtn" class="btn secondary">Primeni ocenu</button></div></div>
+          <div class="panel tool-card"><h3>Oznake i status</h3><label>Dodaj oznake<input id="bulkTagsInput" placeholder="finalna, YouTube, balada"></label><div class="button-stack"><button id="bulkAppendTagsBtn" class="btn secondary">Dodaj oznake</button><button id="bulkClearTagsBtn" class="btn ghost">Obriši moje oznake</button><button id="bulkPublishedBtn" class="btn secondary">Označi kao objavljene</button><button id="bulkUnpublishedBtn" class="btn ghost">Vrati na neobjavljene</button><button id="bulkArchiveBtn" class="btn ghost">Arhiviraj</button><button id="bulkUnarchiveBtn" class="btn ghost">Vrati iz arhive</button></div></div>
+          <div class="panel tool-card"><h3>Brzi folderi</h3><div class="button-stack"><button class="btn secondary tool-folder" data-slug="odrađene-duže-pesme">Dodaj u Odrađene duže pesme</button><button class="btn secondary tool-folder" data-slug="objavljene-na-kanalu">Dodaj u Objavljene na kanalu</button><button id="openFoldersToolBtn" class="btn ghost">Otvori sve foldere</button></div></div>
+          <div class="panel tool-card"><h3>Izvoz</h3><div class="button-stack"><button id="exportM3uBtn" class="btn secondary">Izvezi M3U plejlistu</button><button id="exportLyricsBundleBtn" class="btn secondary">Izvezi sve tekstove</button><button id="copyTitlesBtn" class="btn ghost">Kopiraj naslove</button><button id="copySunoLinksBtn" class="btn ghost">Kopiraj Suno linkove</button></div></div>
+          <div class="panel tool-card"><h3>Izveštaji</h3><label>Vrsta izveštaja<select id="reportType"><option value="duplicates">Duplikati</option><option value="missing_lyrics">Pesme bez teksta</option><option value="missing_audio">Pesme bez lokalnog audio-fajla</option><option value="missing_cover">Pesme bez omota</option><option value="published_missing_url">Objavljene bez YouTube linka</option><option value="long_unpublished">Duge, a neobjavljene</option><option value="audio_quality">Tehnički kvalitet audio-fajlova</option></select></label><button id="runReportBtn" class="btn primary full">Napravi izveštaj</button></div>
+          <div class="panel tool-card"><h3>Backup i održavanje</h3><label class="check-label"><input id="autoBackupBeforeSync" type="checkbox"> Automatski backup pre sinhronizacije</label><div class="button-stack"><button id="fullBackupBtn" class="btn secondary">Kompletan backup sa audio-fajlovima</button><button id="clearLogsToolBtn" class="btn ghost">Očisti Dnevnik</button><button id="openDataFolderBtn" class="btn ghost">Otvori data folder</button></div></div>
+        </div>
+        <div class="panel youtube-audio-results-panel"><div class="section-title"><div><h2>Da li je kompletna pesma objavljena?</h2><p class="muted">Prikazuje pronađeni Suno original, audio podudaranje, pokrivenost originala i delove koji nedostaju sa početka ili kraja.</p></div><div class="inline-form"><select id="youtubeAudioCompletenessFilter"><option value="">Svi rezultati</option><option value="complete">Kompletna</option><option value="almost_complete">Skoro kompletna</option><option value="partial">Delimična</option><option value="short_clip">Kratak isečak</option><option value="different_audio">Drugi / nepotvrđen audio</option></select><button id="refreshYoutubeAudioResultsBtn" class="btn secondary small">Osveži</button></div></div><div id="youtubeAudioResultsList" class="youtube-audio-results-list"></div></div>
+        <div class="panel youtube-matrix-panel"><div class="section-title"><div><h2>Matrica pesama po kanalima</h2><p class="muted">Odmah vidi koja je pesma kompletno objavljena na svakom povezanom kanalu, gde postoji samo isečak i gde nije pronađena.</p></div><button id="refreshYoutubeMatrixBtn" class="btn secondary small">Osveži matricu</button></div><div id="youtubePublicationMatrix" class="youtube-matrix-wrap"></div></div>
+        <div class="panel youtube-coverage-panel"><div class="section-title"><div><h2>Zbirna pokrivenost kroz više videa</h2><p class="muted">Spaja sve potvrđene delove iste Suno pesme na istom kanalu. Tako vidiš da li je cela pesma objavljena kroz jedan video, više delova ili samo Shorts klipove.</p></div><div class="button-row"><button id="refreshYoutubeCoverageBtn" class="btn secondary small">Osveži</button><button id="exportYoutubeCoverageReportBtn2" class="btn primary small">Izvezi izveštaj</button></div></div><div id="youtubeCoverageSummary" class="youtube-summary-badges"></div><div id="youtubeCoverageList" class="youtube-coverage-list"></div></div>
+        <div class="panel youtube-extra-report-panel"><div class="section-title"><div><h2>Duplikati, mix videi i ponovljene pesme</h2><p class="muted">Pronalazi više objava iste pesme, video koji sadrži više Suno originala i slučajeve gde se ista pesma ponavlja više puta.</p></div><button id="refreshYoutubeExtraReportBtn" class="btn secondary small">Osveži</button></div><div id="youtubeExtraReport" class="tools-output"></div></div>
+        <div class="panel youtube-calendar-panel"><div class="section-title"><div><h2>Datumi kada su pesme objavljene</h2><p class="muted">Sve pronađene objave na kanalima koje si označio kao svoje. Jedna pesma može imati više objava na više kanala.</p></div><div class="button-row"><button id="exportYoutubeCalendarBtn" class="btn ghost small">Izvezi CSV</button><button id="refreshYoutubeCalendarBtn" class="btn secondary small">Osveži datume</button></div></div><div id="youtubePublicationCalendar" class="youtube-calendar"></div></div>
+        <div class="panel youtube-matches-panel"><div class="section-title"><div><h2>Moguće neovlašćene objave na YouTube-u</h2><p class="muted">Svaki rezultat mora ručno da se pregleda. Sličan naslov nije dovoljan dokaz da je korišćena tvoja pesma.</p></div><div class="inline-form"><select id="youtubeMatchStatusFilter"><option value="">Svi statusi</option><option value="new">Novi</option><option value="review">Za proveru</option><option value="contacted">Kontaktirani</option><option value="resolved">Rešeni</option><option value="authorized">Dozvoljeni</option><option value="rejected">Nije moja pesma</option></select><button id="refreshYoutubeMatchesBtn" class="btn secondary small">Osveži rezultate</button></div></div><div id="youtubeMatchesList" class="youtube-matches-list"></div></div>
+        <div class="panel advanced-systems-panel"><div class="section-title"><div><h2>Napredni sistemi</h2><p class="muted">Nastavak poslova, inkrementalni backup, analiza kvaliteta, titlovi, transkripcija, stemovi i automatske provere.</p></div><button id="refreshAdvancedStatusBtn" class="btn secondary small">Osveži stanje</button></div><div class="advanced-feature-grid">
+          <div class="advanced-card"><h3>Inkrementalni backup</h3><p>Kopira samo nove i promenjene fajlove po SHA-256 hash-u.</p><div class="folder-path-row"><input id="incrementalBackupDir" placeholder="Folder za backup"><button id="chooseIncrementalBackupDirBtn" class="btn ghost small">Izaberi</button></div><label class="check-label"><input id="incrementalIncludeFiles" type="checkbox" checked> Uključi audio i prateće fajlove</label><button id="runIncrementalBackupBtn" class="btn primary full">Napravi inkrementalni backup</button></div>
+          <div class="advanced-card"><h3>Pronađi premeštene fajlove</h3><p>Skenira izabrani folder i popravlja stare putanje po nazivu i hash-u.</p><div class="folder-path-row"><input id="relocateRootDir" placeholder="Novi glavni folder"><button id="chooseRelocateRootBtn" class="btn ghost small">Izaberi</button></div><button id="runRelocateBtn" class="btn secondary full">Pronađi i popravi putanje</button></div>
+          <div class="advanced-card"><h3>Kvalitet pre YouTube objave</h3><p>LUFS, true peak, tišina, bitrate, kanali, ocena spremnosti i procena BPM-a i tonaliteta (FFmpeg otisak, ne zamenjuje pravi mastering alat).</p><button id="runQualityAnalysisBtn" class="btn success full">Analiziraj izabrane pesme</button></div>
+          <div class="advanced-card"><h3>Red poslova</h3><p>Preuzimanja i analize mogu da se nastave posle restarta.</p><div id="persistentJobsList" class="mini-log"></div></div>
+          <div class="advanced-card"><h3>Automatska YouTube provera</h3><label>Interval<select id="youtubeScheduleMinutes"><option value="0">Isključeno</option><option value="30">30 minuta</option><option value="60" selected>1 sat</option><option value="180">3 sata</option><option value="720">12 sati</option><option value="1440">24 sata</option></select></label><label class="check-label"><input id="youtubeIncludePrivate" type="checkbox" checked> Uključi privatne i unlisted videe mojih OAuth kanala</label><button id="saveYoutubeScheduleBtn" class="btn primary full">Sačuvaj raspored</button><div id="scheduleStatusBox" class="inline-message"></div></div>
+          <div class="advanced-card"><h3>Cloud backup folder</h3><p>Izaberi lokalni OneDrive/Google Drive folder. Baza se na Windowsu štiti DPAPI enkripcijom.</p><div class="folder-path-row"><input id="cloudBackupDir" placeholder="OneDrive ili Google Drive folder"><button id="chooseCloudBackupDirBtn" class="btn ghost small">Izaberi</button></div><label class="check-label"><input id="cloudBackupFiles" type="checkbox"> Uključi i velike audio fajlove</label><button id="runCloudBackupBtn" class="btn secondary full">Napravi cloud backup</button><div class="folder-path-row"><input id="cloudRestorePath" placeholder="Cloud backup ZIP za vraćanje"><button id="chooseCloudRestoreBtn" class="btn ghost small">Izaberi ZIP</button></div><button id="restoreCloudBackupBtn" class="btn danger full">Vrati cloud backup</button></div>
+          <div class="advanced-card"><h3>Opcioni AI dodaci</h3><p>Stemovi, lokalna transkripcija i napredni fingerprint alati rade kao odvojeni dodaci.</p><div id="pluginStatusBox" class="inline-message"></div><label>Model za stemove<select id="stemsModel"><option value="htdemucs">HTDemucs</option><option value="htdemucs_ft">HTDemucs FT</option><option value="mdx_extra">MDX Extra</option></select></label><label>Jezik transkripcije<select id="transcriptionLanguage"><option value="auto" selected>Automatski prepoznaj</option><option value="sr">Srpski</option><option value="hr">Hrvatski</option><option value="bs">Bosanski</option><option value="en">Engleski</option></select></label><label class="check-label"><input id="transcriptionAlignLyrics" type="checkbox" checked> Koristi originalni tekst i automatski napravi LRC/SRT/VTT</label><label class="check-label"><input id="transcriptionOverwriteManualCues" type="checkbox"> Prepiši i ručno uređene titlove (oprezno — briše tvoje ručne ispravke)</label><label>Model za transkripciju<select id="transcriptionModel"><option value="tiny">Tiny — najbrži</option><option value="small" selected>Small — preporučeno</option><option value="medium">Medium — precizniji</option></select></label><div class="button-row"><button id="installStemsBtn" class="btn ghost small">Instaliraj dodatak za stemove</button><button id="installTranscriptionBtn" class="btn ghost small">Instaliraj dodatak za transkripciju</button></div><div class="button-row"><button id="runStemsBtn" class="btn secondary small">Stemovi za izabrane</button><button id="runTranscriptionBtn" class="btn secondary small">Transkribuj izabrane</button></div></div>
+          <div class="advanced-card"><h3>Ažuriranje programa</h3><label>URL update manifesta<input id="updateManifestUrl" placeholder="https://.../updates.json"></label><div class="button-row"><button id="saveUpdateUrlBtn" class="btn ghost small">Sačuvaj</button><button id="checkUpdateBtn" class="btn secondary small">Proveri</button><button id="downloadUpdateBtn" class="btn primary small">Preuzmi</button></div><div id="updateStatusBox" class="inline-message"></div></div>
+        </div><div id="advancedStatusOutput" class="tools-output"></div></div>
+        <div class="panel report-panel"><div class="section-title"><h2>Rezultat alata</h2><button id="clearToolOutputBtn" class="btn ghost small">Očisti prikaz</button></div><div id="toolsOutput" class="tools-output">Ovde će se pojaviti rezultat izveštaja ili masovne radnje.</div></div>
+      </section>
+
+      <section id="view-production" class="view">
+        <div class="panel production-hero"><div><span class="step">v3</span><h2>Kompletna produkcija, zaštita i održavanje</h2><p class="muted">Sve radnje koriste izabranu pesmu iz Biblioteke. Rizične radnje imaju pregled ili izričitu potvrdu.</p></div><div class="button-row"><button id="v3RefreshStatusBtn" class="btn secondary">Osveži stanje</button><button id="v3PreflightBtn" class="btn primary">Testiraj moj računar</button></div></div>
+        <div id="v3StatusBox" class="panel inline-message">Učitavam stanje v3 sistema...</div>
+        <div class="two-col">
+          <div class="panel form-panel"><h2>Zaključavanje programa</h2><p class="muted">Opcioni lokalni PIN štiti neobjavljene pesme i povezane naloge. PIN se ne čuva — čuva se samo jak PBKDF2 hash.</p><div class="two-inputs"><label>Novi PIN<input id="v3SecurityNewPin" type="password" autocomplete="new-password" placeholder="Najmanje 4 znaka"></label><label>Automatsko zaključavanje<select id="v3SecurityTimeout"><option value="0">Samo ručno</option><option value="15">Posle 15 minuta</option><option value="30" selected>Posle 30 minuta</option><option value="60">Posle 1 sata</option><option value="240">Posle 4 sata</option></select></label></div><div class="button-row"><button id="v3SecuritySetBtn" class="btn primary">Postavi / promeni PIN</button><button id="v3SecurityLockBtn" class="btn secondary">Zaključaj sada</button><button id="v3SecurityDisableBtn" class="btn danger">Isključi PIN</button></div><div id="v3SecurityStatus" class="inline-message">Proveravam zaštitu...</div></div>
+          <div class="panel form-panel"><h2>Instalacija, rollback i potpis</h2><p class="muted">Transakciono ažuriranje sada automatski vraća staru verziju ako nova ne prođe health test.</p><div class="button-stack"><button id="v3OpenMaintenanceBtn" class="btn primary">Otvori folder sa podacima i logovima</button><button id="v3OpenSnapshotsBtn" class="btn secondary">Otvori snapshot i rollback foldere</button><button id="v3StorageCleanupBtn" class="btn ghost">Bezbedno očisti stari keš</button></div><p class="fine-print">Digitalni potpis zahteva pravi, plaćeni PFX code-signing sertifikat vezan za proverenog izdavača (Microsoft/CA identitet) — to nije nešto što program može sam sebi da napravi. Bez njega, Windows SmartScreen i dalje prikazuje upozorenje "nepoznat izdavač"; SHA-256 provere u SHA256SUMS.txt ostaju stvarna zamena za integritet fajlova.</p></div>
+        </div>
+        <div class="two-col">
+          <div class="panel form-panel"><h2>Integritet i duplikati</h2><p class="muted">SHA-256, FFprobe, oštećeni fajlovi, nestale putanje i iste pesme pod drugim nazivom.</p><div class="button-stack"><button id="v3IntegrityBtn" class="btn primary">Proveri celu biblioteku</button><button id="v3DuplicatesBtn" class="btn secondary">Pronađi duplikate (naslov i trajanje)</button><button id="v3AudioConfirmDuplicatesBtn" class="btn secondary">Audio provera duplikata (otisak)</button></div><p class="fine-print">Audio provera koristi isti otisak (Chromaprint) kao Pronalazač mojih pesama i proverava samo pesme koje već imaju lokalni fajl, najviše 40 parova po pokretanju. Značajno ubrzana ili usporena (tempo/pitch) druga verzija iste pesme može dobiti nizak audio rezultat — to je stvarno ograničenje otiska, ne greška.</p></div>
+          <div class="panel form-panel"><h2>Automatska organizacija foldera</h2><label>Ciljni folder<div class="folder-path-row"><input id="v3OrganizeTarget" placeholder="Izaberi folder"><button id="v3ChooseOrganizeTargetBtn" class="btn ghost small">Izaberi</button></div></label><label>Šablon<input id="v3OrganizeTemplate" value="{status}/{godina}/{naslov}"></label><label>Režim<select id="v3OrganizeMode"><option value="move">Premesti fajlove</option><option value="copy">Kopiraj fajlove</option></select></label><label class="check-label"><input id="v3OrganizeDryRun" type="checkbox" checked> Samo napravi plan, ne menjaj fajlove</label><button id="v3OrganizeBtn" class="btn primary">Pokreni organizaciju</button></div>
+        </div>
+        <div class="two-col">
+          <div class="panel form-panel"><h2>Pametni Shorts isečci</h2><p class="muted">Analizira energiju pesme i predlaže najbolje delove od 15, 30, 45 i 60 sekundi.</p><div class="button-row"><button id="v3SuggestShortsBtn" class="btn secondary">Predloži delove</button><button id="v3RenderShortsBtn" class="btn primary">Napravi najbolje isečke</button></div></div>
+          <div class="panel form-panel"><h2>Automatski lyric video</h2><label>Format<select id="v3LyricAspect"><option value="16:9">YouTube 16:9</option><option value="9:16">Shorts / TikTok / Reels 9:16</option></select></label><label>Pozadina — slika ili video<div class="folder-path-row"><input id="v3LyricBackground" placeholder="Opciono"><button id="v3ChooseBackgroundBtn" class="btn ghost small">Izaberi</button></div></label><div class="two-inputs"><label>Font<input id="v3LyricFont" value="Arial"></label><label>Veličina<input id="v3LyricFontSize" type="number" min="24" max="140" value="54"></label></div><button id="v3LyricVideoBtn" class="btn primary">Napravi lyric video</button></div>
+        </div>
+        <div class="two-col">
+          <div class="panel form-panel"><h2>YouTube paket i direktan upload</h2><label>Profil kanala<select id="v3ChannelProfile"><option>Nedostaješ PUNOO PESME</option><option>Nedostaješ PUNOO</option></select></label><label>Gotov MP4 video<div class="folder-path-row"><input id="v3YoutubeVideoPath"><button id="v3ChooseYoutubeVideoBtn" class="btn ghost small">Izaberi</button></div></label><label>Thumbnail JPG/PNG<div class="folder-path-row"><input id="v3YoutubeThumbnailPath" placeholder="Opciono"><button id="v3ChooseYoutubeThumbnailBtn" class="btn ghost small">Izaberi</button></div></label><div class="two-inputs"><label>Vidljivost<select id="v3YoutubePrivacy"><option value="private">Privatno — preporučeno</option><option value="unlisted">Unlisted</option><option value="public">Javno</option></select></label><label>Zakaži objavu<input id="v3YoutubePublishAt" type="datetime-local" title="Opciono; video se prvo šalje privatno"></label></div><label>YouTube playlist ID<input id="v3YoutubePlaylistId" placeholder="Opciono, npr. PL..."></label><div class="button-row"><button id="v3YoutubePackageBtn" class="btn secondary">Napravi SEO paket</button><button id="v3YoutubeUploadBtn" class="btn danger">Otpremi na YouTube</button></div><p class="fine-print">Upload ide u delovima i nastavlja se posle prekida. Zakazana objava se šalje privatno do izabranog vremena. Thumbnail i playlist su opcioni.</p></div>
+          <div class="panel form-panel"><h2>Zaštita pesama i rollback</h2><div class="button-stack"><button id="v3ProofBtn" class="btn primary">Napravi dokazni ZIP za pesmu</button><button id="v3PanakoIndexBtn" class="btn secondary">Napravi Panako Content-ID indeks</button><button id="v3SnapshotBtn" class="btn secondary">Snapshot cele verzije programa</button></div><hr><label>Automatska YouTube provera<select id="v3WatchInterval"><option value="360">Svakih 6 sati</option><option value="720">Svakih 12 sati</option><option value="1440">Jednom dnevno</option></select></label><label class="check-label"><input id="v3WatchEnabled" type="checkbox" checked> Uključi kontinuiranu proveru</label><button id="v3SaveWatchBtn" class="btn ghost">Sačuvaj automatsku proveru</button></div>
+          <div class="panel form-panel"><h2>Panako (opcioni dodatni fingerprint motor)</h2><p class="muted">Panako NIJE deo ovog programa i ne preuzima se automatski — to je odvojen projekat pod GPL-3.0 licencom (panako.be). Sve osnovne funkcije, uključujući Pronalazač mojih pesama, rade i bez njega. Ako ga želiš, sam preuzmi <code>panako.jar</code> sa zvaničnog izvora, pa ga poveži ovde.</p><div id="panakoInstallStatus" class="inline-message"></div><div class="folder-path-row"><input id="panakoJarPath" placeholder="Izaberi preuzeti panako.jar"><button id="choosePanakoJarBtn" class="btn ghost">Izaberi .jar</button></div><div class="button-row"><button id="installPanakoBtn" class="btn secondary">INSTALIRAJ / TESTIRAJ PANAKO</button></div><pre id="panakoInstallOutput" class="tools-output hidden"></pre></div>
+        </div>
+        <div class="panel"><div class="section-title"><div><h2>Rezultat v3 radnji</h2><p class="muted">Ovde se prikazuju provere, planovi, predlozi i putanje napravljenih fajlova.</p></div><button id="v3ClearOutputBtn" class="btn ghost small">Očisti</button></div><div id="v3Output" class="tools-output">Izaberi pesmu u Biblioteci, zatim pokreni željenu radnju.</div></div>
+      </section>
+
+      <section id="view-stats" class="view"><div id="statCards" class="stat-cards"></div><div class="two-col"><div class="panel chart-panel"><h2>Pesme po modelu</h2><div id="modelChart" class="bars"></div></div><div class="panel chart-panel"><h2>Kreiranje po mesecima</h2><div id="monthChart" class="bars"></div></div></div></section>
+      <section id="view-logs" class="view"><div class="panel form-panel"><div class="section-title"><h2>Dnevnik rada</h2><button id="refreshLogsBtn" class="btn secondary small">Osveži</button></div><div id="logsTable" class="logs-table"></div></div></section>
+
+      <section id="view-settings" class="view">
+        <div class="panel theme-settings"><div class="section-title"><div><h2>Izgled i teme</h2><p class="muted">Klikni na temu i izgled se menja odmah, bez restartovanja. Izbor se pamti po ovom uređaju.</p></div><select id="themeSelect"></select></div><div id="themeGrid" class="theme-grid"></div>
+          <div class="button-row" style="margin-top:14px"><button id="resetThemeBtn" class="btn ghost small">Vrati na originalnu temu</button><button id="exportThemeSettingsBtn" class="btn ghost small">Izvezi podešavanja izgleda</button><label class="btn ghost small" style="cursor:pointer">Uvezi podešavanja<input id="importThemeSettingsInput" type="file" accept="application/json" class="hidden"></label></div>
+        </div>
+        <div class="panel form-panel" id="accessibilityPanel">
+          <h2>Skaliranje i pristupačnost</h2>
+          <div class="option-grid">
+            <label>Veličina teksta<select id="textScaleSelect"><option value="90">Manji (90%)</option><option value="100" selected>Normalan (100%)</option><option value="115">Veći (115%)</option><option value="130">Najveći (130%)</option></select></label>
+            <label>Gustina rasporeda<select id="densitySelect"><option value="compact">Kompaktno</option><option value="normal" selected>Normalno</option><option value="comfortable">Udobno</option></select></label>
+          </div>
+          <div class="option-grid">
+            <div class="toggle-row"><input type="checkbox" id="reduceMotionToggle"><div><strong>Smanjeno kretanje</strong><small>Isključuje hover animacije i prelaze tema koje mogu smetati.</small></div></div>
+            <div class="toggle-row"><input type="checkbox" id="highContrastToggle"><div><strong>Visokokontrastni režim</strong><small>Pojačava kontrast teksta i ivica na trenutnoj temi.</small></div></div>
+            <div class="toggle-row"><input type="checkbox" id="colorblindToggle"><div><strong>Podrška za daltonizam</strong><small>Zamenjuje crveno/zeleno statusne boje plavo/narandžastim parom.</small></div></div>
+          </div>
+          <div id="contrastCheckResult" class="diagnostics-box hidden"></div>
+        </div>
+        <div class="settings-grid">
+          <div class="panel form-panel"><h2>Glavni folder za preuzimanje</h2><div class="folder-path-row"><input id="downloadDirInput" placeholder="C:\Suno pesme"><button id="chooseSettingsFolderBtn" class="btn ghost">Izaberi</button></div><div class="button-row"><button id="saveSettingsBtn" class="btn primary">Sačuvaj</button><button id="openDownloadFolderBtn" class="btn secondary">Otvori folder</button></div></div>
+          <div class="panel form-panel"><h2>Folder „OBRAĐENO NA YOUTUBE“</h2><p class="muted">Ovde program automatski kopira pun original potvrđene Suno pesme čim se pronađe na tvom YouTube kanalu.</p><div class="folder-path-row"><input id="youtubeProcessedDirInput" placeholder="OBRAĐENO NA YOUTUBE"><button id="chooseYoutubeProcessedDirBtn" class="btn ghost">Izaberi</button></div><div class="button-row"><button id="saveYoutubeProcessedDirBtn" class="btn primary">Sačuvaj</button><button id="openYoutubeProcessedDirBtn" class="btn secondary">Otvori folder</button></div></div>
+          <div class="panel form-panel"><h2>FFmpeg audio alati</h2><p class="muted">Potrebni su za skraćivanje, konverziju, fade i normalizaciju. Program ih preuzima samo jednom, bez instalacije u Windows.</p><button id="installAudioToolsSettingsBtn" class="btn secondary full">Proveri / pripremi alate</button><div id="settingsAudioToolsStatus" class="inline-message"></div></div>
+          <div class="panel form-panel"><h2>Rezervna kopija i vraćanje</h2><p class="muted">Običan backup čuva bazu i podatke. „Kompletan backup“ iz Pametnih alata čuva i MP3/WAV, omote, tekstove i obrađene verzije. Oba se vraćaju ovim istim dugmetom.</p><button id="backupBtn" class="btn secondary full">Napravi backup baze</button><label>Backup ZIP ili baza<div class="folder-path-row"><input id="restorePathInput" placeholder="Izaberi .zip ili .db backup"><button id="chooseRestoreFileBtn" class="btn ghost">Izaberi fajl</button></div></label><button id="restoreBackupBtn" class="btn danger full">Vrati izabrani backup</button><div id="restoreMessage" class="inline-message"></div></div>
+          <div class="panel form-panel"><h2>Kompletna provera programa</h2><p class="muted">Proverava bazu, dozvole foldera, lokalne putanje, FFmpeg i stvarno pravi pa iseče kratak test MP3. Dijagnostički ZIP ne sadrži Suno token niti vrednost YouTube API ključa.</p><div class="button-stack"><button id="runSelfTestBtn" class="btn primary">Pokreni kompletnu proveru</button><button id="exportDiagnosticsBtn" class="btn secondary">Preuzmi dijagnostički paket</button><button id="refreshStorageBtn" class="btn ghost">Proveri zauzeće prostora</button></div><div id="selfTestSummary" class="inline-message">Provera još nije pokrenuta.</div><div id="selfTestResults" class="mini-log hidden"></div><div id="storageSummary" class="inline-message"></div></div>
+          <div class="panel form-panel verification-limits-panel"><h2>Šta još nije potpuno potvrđeno</h2><p class="muted">Lokalni i automatizovani testovi ne mogu da zamene proveru na konkretnom Windows računaru sa stvarnim privatnim nalozima.</p><details open><summary>Prikaži 11 provera koje zahtevaju stvarno okruženje</summary><ol class="verification-limit-list"><li><strong>Privatna Suno sesija:</strong> višesatna sinhronizacija svih stvarnih pesama i buduće promene internog Suno API-ja.</li><li><strong>Google OAuth i Brand nalozi:</strong> kompletan tok izbora svakog korisnikovog kanala.</li><li><strong>Privatni/unlisted YouTube video:</strong> browser profil mora stvarno imati dozvolu za taj video.</li><li><strong>Windows browser E2E:</strong> Chrome, Edge i Brave, uključujući sleep/wake, prekid mreže i višesatni rad.</li><li><strong>SmartScreen i antivirus:</strong> ponašanje zavisi od računara, reputacije fajla i izdavačkog potpisa.</li><li><strong>Digitalni potpis:</strong> ZIP i preuzeti alati imaju hash proveru, ali program i installer nisu potpisani code-signing sertifikatom.</li><li><strong>Kompajliran installer:</strong> Inno Setup projekat postoji, ali finalni potpisani EXE mora da se napravi na Windowsu.</li><li><strong>Veliki AI modeli:</strong> stemovi i faster-whisper zavise od CPU/GPU memorije i slobodnog prostora.</li><li><strong>Panako native okruženje:</strong> opcioni napredni matcher zahteva Javu i dodatne komponente.</li><li><strong>Rollback cele verzije:</strong> transakciona zamena i automatski povratak postoje; realni Windows test ostaje obavezan pre javne distribucije.</li><li><strong>Neprekidna kompatibilnost sa Suno sajtom:</strong> bez stabilnog zvaničnog izvoznog API-ja nezvanična integracija ne može trajno garantovati rad bez budućih zakrpa.</li></ol></details><div class="verification-action"><strong>Kada nastane problem:</strong> u kartici „Provera i dijagnostika” klikni <strong>Pokreni kompletnu proveru</strong>, zatim <strong>Preuzmi dijagnostički paket</strong>. Paket namerno ne sadrži Suno ili Google tokene.</div></div>
+          <div class="panel form-panel"><h2>Provera lokalne biblioteke</h2><p class="muted">Pronalaženje obrisanih ili premeštenih MP3/WAV, omota, tekstova i obrađenih verzija.</p><div class="button-row"><button id="checkLibraryBtn" class="btn secondary">Proveri fajlove</button><button id="repairLibraryBtn" class="btn ghost">Očisti nevažeće putanje</button></div><div id="libraryHealthStatus" class="inline-message">Provera još nije pokrenuta.</div><div id="libraryHealthDetails" class="mini-log hidden"></div></div>
+          <div class="panel form-panel"><h2>Izvoz cele biblioteke</h2><p class="muted">JSON i ZIP sada uključuju foldere i sve obrađene audio-verzije.</p><div class="button-row"><button class="btn ghost export-all" data-format="csv">CSV</button><button class="btn ghost export-all" data-format="json">JSON</button><button class="btn ghost export-all" data-format="zip">ZIP sa fajlovima</button></div></div>
+          <div class="panel form-panel"><h2>Automatizacija</h2><label>Automatska provera novih pesama<select id="settingsAutoCheckMinutes"><option value="0">Isključeno</option><option value="5">5 minuta</option><option value="15">15 minuta</option><option value="30">30 minuta</option><option value="60">60 minuta</option></select></label><label class="check-label"><input id="settingsAutoBackup" type="checkbox"> Backup baze pre svake pune sinhronizacije</label><button id="saveAutomationSettingsBtn" class="btn primary">Sačuvaj automatizaciju</button></div>
+          <div class="panel form-panel session-keeper-panel"><h2>Suno sesija bez prekida</h2><p class="muted">Dok program radi, periodično obnavlja kratkotrajni prijavni token i označava sesiju kao aktivnu. Lozinka se ne čuva.</p><label class="check-label"><input id="sunoKeepaliveEnabled" type="checkbox" checked> Održavaj Suno sesiju aktivnom</label><label>Interval osvežavanja<select id="sunoKeepaliveMinutes"><option value="2">2 minuta</option><option value="4" selected>4 minuta — preporučeno</option><option value="5">5 minuta</option><option value="8">8 minuta</option><option value="10">10 minuta</option></select></label><label class="check-label"><input id="sunoAutoReopenBrowser" type="checkbox"> Ponovo otvori poseban Suno prozor ako se zatvori</label><div class="button-row"><button id="saveSunoSessionSettingsBtn" class="btn primary">Sačuvaj</button><button id="refreshSunoSessionNowBtn" class="btn secondary">Osveži sesiju sada</button></div><div id="sunoSessionStatus" class="inline-message">Čeka se stanje Suno sesije.</div><p class="fine-print">Ovo ne može da zaobiđe odjavu koju Suno izvrši zbog opozvane prijave, promene lozinke ili maksimalnog trajanja sesije.</p></div>
+          <div class="panel form-panel warning-panel"><h2>Privatnost i zatvaranje</h2><p>Token Suno prijave ostaje samo u memoriji dok je program otvoren. Poseban browser profil čuva samo Suno kolačiće kao običan browser.</p><div class="button-stack"><button id="disconnectBtn" class="btn danger">Ukloni vezu</button><button id="shutdownProgramBtn" class="btn ghost">Zatvori lokalni program</button></div></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="br-right-console" id="brRightConsole">
+      <div class="br-on-air" id="brOnAir">ON AIR</div>
+      <div class="br-clock"><strong id="brClock">00:00:00</strong><span id="brDate">—</span></div>
+      <div class="br-side-panel"><h3>STATUS SISTEMA</h3><div><span>Sistem</span><b class="ok">ONLINE</b></div><div><span>Backup</span><b class="ok">OK</b></div><div><span>Storage</span><i class="br-storage"><em></em></i><b>78%</b></div><div><span>Stream</span><b>128 kbps</b><b class="ok">ONLINE</b></div><div><span>Licenca</span><b>Pro Plan</b><b class="ok">AKTIVNA</b></div></div>
+      <div class="br-side-panel br-meter-panel"><h3>VU METRI / GLAVNI IZLAZ</h3><div class="br-meter-area"><div class="br-meter-col"><span>L</span><div class="br-meter-track"><i id="brMeterL"></i></div><small id="brMeterLValue">-18.4 dB</small></div><div class="br-meter-col"><span>R</span><div class="br-meter-track"><i id="brMeterR"></i></div><small id="brMeterRValue">-17.8 dB</small></div><div class="br-loudness"><div><strong>-14.1</strong><span>LUFS<br>INTEGRATED</span></div><div><strong>-1.2</strong><span>LUFS<br>SHORT TERM</span></div><div><strong>1.8</strong><span>dB<br>TRUE PEAK</span></div></div></div></div>
+      <div class="br-side-panel br-source"><h3>SOURCE</h3><div><span id="brSourceName">Zetta MIC 1</span><i><em></em></i></div></div>
+      <div class="br-side-volume"><span>🔊</span><input id="brVolumeSlider" type="range" min="0" max="100" value="80"><b id="brVolumeValue">80%</b></div>
+    </aside>
+
+    <footer class="br-bottom-console" id="brBottomConsole">
+      <div class="br-bottom-group br-player-group"><small>PLAYER</small><div><button id="brBottomPrev" type="button">|◀</button><button id="brBottomPlay" class="br-bottom-play" type="button">▶</button><button id="brBottomNext" type="button">▶|</button><button id="brBottomStop" type="button">■</button><button id="brBottomShuffle" class="danger" type="button">⤨ SHUFFLE</button><button id="brBottomRepeat" type="button">↻ REPEAT</button></div></div>
+      <div class="br-bottom-group br-ab-group"><small>&nbsp;</small><div><button class="active">A</button><button>B</button></div></div>
+      <div class="br-bottom-slider"><small>PITCH</small><strong id="brPitchValue">0.00%</strong><input id="brPitchSlider" type="range" min="-12" max="12" step="0.01" value="0"></div>
+      <div class="br-bottom-slider"><small>TEMPO</small><strong id="brTempoValue">128.00</strong><input id="brTempoSlider" type="range" min="70" max="180" step="0.1" value="128"></div>
+      <button class="br-reset" id="brResetTransport" type="button">RESET</button>
+      <div class="br-bottom-slider br-crossfade"><small>CROSSFADE</small><strong id="brCrossfadeValue">5 sec</strong><input id="brCrossfadeSlider" type="range" min="0" max="15" step="1" value="5"></div>
+      <button class="br-start-jingle" id="brStartJingle" type="button">◉ START JINGLE</button>
+      <div class="br-status-strip"><span>SUNO PESME STUDIO v3.3.2 (64-bit)</span><button id="brRecordBtn" type="button"><i></i> RECORD</button><button type="button">SCHEDULE&nbsp;&nbsp; ON⌄</button><span>NEXT JINGLE&nbsp;&nbsp; 12:00:00&nbsp;&nbsp; Redline Jingle 01</span><span>CPU&nbsp; <i><em style="width:18%"></em></i></span><span>RAM&nbsp; <i><em style="width:42%"></em></i></span><span>DISK&nbsp; <i><em class="red" style="width:78%"></em></i></span></div>
+    </footer>
+
+
+    <aside class="sm-right-console" id="smRightConsole">
+      <div class="sm-profile-bar"><button type="button" title="Obaveštenja">●</button><button type="button" title="Pomoć">?</button><div class="sm-profile-avatar">SP</div><span>⌄</span></div>
+      <section class="sm-side-section sm-quick-tools">
+        <div class="sm-tape-heading yellow"><span>BRZI AI ALATI</span></div>
+        <div class="sm-quick-grid">
+          <button data-sm-view="production"><span>♩</span><b>AI TEKST → PESMA</b></button>
+          <button data-sm-view="versions"><span>▣</span><b>AI COVER VERZIJA</b></button>
+          <button data-sm-view="recognition"><span>☼</span><b>RAZVOJ IDEJE</b></button>
+          <button data-sm-view="audio"><span>〰</span><b>POBOLJŠAJ AUDIO</b></button>
+        </div>
+        <button class="sm-stem-tool" data-sm-view="audio"><span>STEM RASTAVLJANJE</span><em>NOVO</em><small>Odvoji vokale, instrumente i još mnogo toga.</small><b>♮</b></button>
+      </section>
+      <section class="sm-side-section sm-activity-panel">
+        <div class="sm-tape-heading blue"><span>AKTIVNOST</span></div>
+        <div id="smActivityList" class="sm-activity-list">
+          <article><span class="sm-mini-cassette blue"></span><div><b>Biblioteka je spremna</b><small>Program je pokrenut</small></div><time>sada</time></article>
+          <article><span class="sm-mini-cassette red"></span><div><b>Audio alati</b><small>Čekaju izabranu pesmu</small></div><time>spremno</time></article>
+          <article><span class="sm-mini-cassette yellow"></span><div><b>YouTube centar</b><small>Provera dostupna</small></div><time>online</time></article>
+        </div>
+      </section>
+      <div class="sm-side-footer"><strong>SUNO PESME STUDIO</strong><span>NEDOSTAJEŠ PUNOO v2.0</span><i></i></div>
+    </aside>
+
+    <footer class="sm-bottom-player" id="smBottomPlayer">
+      <div class="sm-now-cassette"><div class="sm-tape-cover"><img id="smPlayerCover" alt="" hidden><span id="smPlayerCoverPlaceholder">MIXTAPE</span></div></div>
+      <div class="sm-now-info"><strong id="smPlayerTitle">Nijedna pesma nije puštena</strong><span id="smPlayerArtist">Izaberi pesmu</span><small id="smPlayerMeta">— · — BPM · —</small></div>
+      <div class="sm-wave-player"><div class="sm-wave-bars" id="smWaveBars"></div><div class="sm-wave-played" id="smWavePlayed"><div class="sm-wave-bars" id="smWavePlayedBars"></div></div><div class="sm-wave-cursor" id="smWaveCursor"></div><div class="sm-wave-time"><b id="smElapsed">00:00</b><span id="smTotal">00:00</span></div></div>
+      <div class="sm-deck"><div class="sm-deck-label">SUNO PESME STUDIO</div><button id="smPrevBtn" type="button"><span>◀◀</span><small>REW</small></button><button id="smPlayBtn" class="sm-play-key" type="button"><span>▶</span><small>PLAY</small></button><button id="smStopBtn" type="button"><span>■</span><small>STOP</small></button><button id="smNextBtn" type="button"><span>▶▶</span><small>FFWD</small></button><button id="smRecordBtn" type="button"><span>●</span><small>REC</small></button></div>
+      <div class="sm-volume-deck"><small>VOLUME</small><div class="sm-volume-knob" id="smVolumeKnob"><i></i></div><input id="smVolumeSlider" type="range" min="0" max="100" value="82"><b>SP</b></div>
+    </footer>
+
+
+    <aside class="lc-right-console" id="lcRightConsole">
+      <section class="lc-performance">
+        <div class="lc-side-title"><strong>PERFORMANSE⌄</strong><select><option>Poslednjih 30 dana</option><option>Ova godina</option></select></div>
+        <div class="lc-kpi-grid"><article><small>STREAMOVI</small><strong id="lcStreamsKpi">0</strong><em class="down">▼ -6.2%</em><i class="lc-spark red"></i></article><article><small>SLUŠAOCI</small><strong id="lcListenersKpi">0</strong><em>▲ 8.7%</em><i class="lc-spark green"></i></article><article><small>PREGLEDI (YT)</small><strong id="lcYoutubeKpi">0</strong><em>▲ 12.1%</em><i class="lc-spark blue"></i></article><article><small>DODATO U PLAYLISTE</small><strong id="lcPlaylistKpi">0</strong><em>▲ 15.3%</em><i class="lc-spark green"></i></article></div>
+        <div class="lc-market-grid"><article><small>TOP PLATFORMA</small><div class="lc-donut"><i></i><b></b><em></em></div><ul><li><i class="spotify"></i>Spotify <b>44%</b></li><li><i class="youtube"></i>YouTube <b>28%</b></li><li><i class="apple"></i>Apple Music <b>15%</b></li><li><i class="deezer"></i>Deezer <b>7%</b></li><li><i></i>Ostalo <b>6%</b></li></ul></article><article><small>ZEMLJE</small><div class="lc-country"><span>Srbija</span><i><b style="width:38%"></b></i><em>38%</em></div><div class="lc-country"><span>Hrvatska</span><i><b style="width:17%"></b></i><em>17%</em></div><div class="lc-country"><span>BiH</span><i><b style="width:11%"></b></i><em>11%</em></div><div class="lc-country"><span>Nemačka</span><i><b style="width:7%"></b></i><em>7%</em></div><div class="lc-country"><span>Austrija</span><i><b style="width:6%"></b></i><em>6%</em></div></article></div>
+      </section>
+      <section class="lc-release-planner"><div class="lc-side-title"><strong>PLANER OBJAVA⌄</strong><button data-lc-view="smart">＋ Nova objava</button></div><div id="lcPlannerList" class="lc-planner-list"></div><button data-lc-view="smart" class="lc-full-calendar">Prikaži ceo kalendar</button></section>
+      <section class="lc-distribution"><div class="lc-side-title"><strong>DISTRIBUCIJA⌄</strong><button data-lc-view="release">Prikaži sve</button></div><div class="lc-platforms"><article><span class="spotify">●</span><b>Spotify</b><small>✓ Poslato</small></article><article><span class="youtube">▶</span><b>YouTube Music</b><small>⌛ Na čekanju</small></article><article><span class="apple">♫</span><b>Apple Music</b><small>✓ Poslato</small></article><article><span class="deezer">▦</span><b>Deezer</b><small>⌛ Na čekanju</small></article><article><span class="tidal">◆</span><b>Tidal</b><small>□ 30.05.2026.</small></article></div></section>
+    </aside>
+
+    <footer class="lc-bottom-player" id="lcBottomPlayer">
+      <div class="lc-now-cover"><img id="lcPlayerCover" alt="" hidden><span id="lcPlayerCoverPlaceholder">S</span></div><div class="lc-now-info"><strong id="lcPlayerTitle">Nijedna pesma nije puštena</strong><span id="lcPlayerArtist">Suno Pesme</span></div><button class="lc-heart" type="button">♡</button><button type="button">•••</button>
+      <div class="lc-player-center"><div class="lc-transport"><button type="button">⤨</button><button id="lcPrevBtn" type="button">|◀</button><button id="lcPlayBtn" class="lc-play" type="button">▶</button><button id="lcNextBtn" type="button">▶|</button><button type="button">↻</button></div><div class="lc-progress-row"><span id="lcElapsed">00:00</span><div id="lcProgress" class="lc-wave"><i></i><em></em></div><span id="lcTotal">00:00</span></div></div>
+      <div class="lc-player-right"><span>🔊</span><input id="lcVolumeSlider" type="range" min="0" max="100" value="82"><button type="button">☷</button><button type="button">▧</button></div>
+    </footer>
+
+
+
+    <aside class="vl-right-console" id="vlRightConsole">
+      <section class="vl-side-block"><h3>BRZI ALATI</h3><button data-vl-view="production"><span>✧</span><b>AI Tekst u pesmu</b></button><button data-vl-view="audio"><span>♩</span><b>Razdvajanje vokala</b></button><button data-vl-view="audio"><span>▥</span><b>Mastering</b></button><button data-vl-view="download"><span>↻</span><b>Konvertuj format</b></button><button data-vl-view="release"><span>◇</span><b>Uredi metapodatke</b></button></section>
+      <section class="vl-side-block vl-activity"><h3>AKTIVNOST</h3><div id="vlActivityList"><article><i class="violet">N</i><div><b>Biblioteka je spremna</b><small>Program je pokrenut</small></div><time>sada</time></article><article><i class="red">Y</i><div><b>YouTube centar</b><small>Provera je dostupna</small></div><time>online</time></article><article><i class="amber">M</i><div><b>Mastering alati</b><small>Čekaju izabranu pesmu</small></div><time>spremno</time></article></div></section>
+    </aside>
+
+    <footer class="vl-bottom-player" id="vlBottomPlayer">
+      <div class="vl-now-cover"><img id="vlPlayerCover" alt="" hidden><span id="vlPlayerCoverPlaceholder">VINYL</span></div>
+      <div class="vl-now-info"><strong id="vlPlayerTitle">Nijedna pesma nije puštena</strong><span id="vlPlayerArtist">Suno Pesme</span><button type="button">♡</button><div class="vl-mini-wave"><div id="vlMiniWaveBars"></div><div id="vlMiniWavePlayed"><div id="vlMiniWavePlayedBars"></div></div><i id="vlMiniWaveCursor"></i></div><div class="vl-time-row"><b id="vlElapsed">00:00</b><input id="vlSeek" type="range" min="0" max="1000" value="0"><span id="vlTotal">00:00</span></div></div>
+      <div class="vl-transport"><button id="vlShuffleBtn" type="button">⤨</button><button id="vlPrevBtn" type="button">|◀</button><button id="vlPlayBtn" class="vl-play" type="button">▶</button><button id="vlNextBtn" type="button">▶|</button><button id="vlRepeatBtn" type="button">↻</button></div>
+      <div class="vl-vu"><small>STEREO</small><div class="vl-vu-face"><i></i><i></i><span>L</span><span>R</span></div></div>
+      <div class="vl-turntable"><div class="vl-record"><i></i></div><div class="vl-tonearm"><i></i></div><div class="vl-volume-knob"><i></i><small>MIN</small><b>MAX</b></div><input id="vlVolumeSlider" type="range" min="0" max="100" value="82"></div>
+    </footer>
+
+    <aside class="sg-right-console" id="sgRightConsole">
+      <div class="sg-rail-label right">SIGNAL GRID RACK</div>
+      <section class="sg-side-module"><div class="sg-module-title"><span>BRZI ALATI</span><i></i></div><button data-sg-view="audio">◉ ANALIZA TALASA</button><button data-sg-view="audio">〰 NORMALIZUJ</button><button data-sg-view="audio">♬ IZOLUJ VOCAL</button><button data-sg-view="audio">◁ UKLONI TIŠINU</button><button data-sg-view="recognition">◷ DETEKTUJ BPM</button><button data-sg-view="audio">↟ PODIGNI TON</button><button data-sg-view="audio">◇ STEM EKSTRAKCIJA</button></section>
+      <section class="sg-side-module sg-stat-module"><div class="sg-module-title"><span>STATISTIKA</span><i></i></div><div><span>UKUPNO PESAMA</span><b id="sgTotalSongs">0</b></div><div><span>UKUPNO TRAJANJE</span><b id="sgTotalDuration">0:00:00</b></div><div><span>UKUPNO IZVOĐAČA</span><b id="sgTotalArtists">0</b></div><div><span>ŽANROVA</span><b id="sgTotalGenres">0</b></div><div><span>ALBUMI</span><b id="sgTotalAlbums">0</b></div><div><span>DODATO DANAS</span><b id="sgAddedToday">0</b></div></section>
+      <section class="sg-side-module sg-genres"><div class="sg-module-title"><span>ŽANROVI</span><i></i></div><div><span>Pop</span><i><b style="width:72%"></b></i><em>25%</em></div><div><span>Rock</span><i><b style="width:58%"></b></i><em>18%</em></div><div><span>Hip Hop</span><i><b style="width:49%"></b></i><em>16%</em></div><div><span>Folk</span><i><b style="width:38%"></b></i><em>12%</em></div><div><span>Elektronika</span><i><b style="width:28%"></b></i><em>9%</em></div><div><span>Drugo</span><i><b style="width:61%"></b></i><em>20%</em></div></section>
+      <section class="sg-side-module sg-quality"><div class="sg-module-title"><span>REZOLUCIJA / KVALITET</span><i></i></div><div class="sg-quality-ring"><strong id="sgQualityValue">48%</strong></div><ul><li><i class="blue"></i>FLAC <b>48%</b></li><li><i class="cyan"></i>MP3 320 <b>28%</b></li><li><i class="orange"></i>MP3 128 <b>14%</b></li><li><i class="gray"></i>WAV <b>8%</b></li><li><i class="dark"></i>Drugo <b>2%</b></li></ul></section>
+    </aside>
+
+    <footer class="sg-bottom-console" id="sgBottomConsole">
+      <section class="sg-output-knob"><small>OUTPUT</small><div class="sg-knob"><i></i></div></section>
+      <section class="sg-output-meter"><div><span>L</span><i><b id="sgOutputL"></b></i><small>-12</small></div><div><span>R</span><i><b id="sgOutputR"></b></i><small>-12</small></div></section>
+      <section class="sg-now-playing"><div class="sg-now-cover"><img id="sgPlayerCover" alt="" hidden><span id="sgPlayerCoverPlaceholder">SG</span></div><div class="sg-now-meta"><strong id="sgPlayerTitle">Nijedna pesma nije puštena</strong><span id="sgPlayerArtist">Suno Pesme</span><small id="sgPlayerFormat">MP3 · 320 kbps · 44.1 kHz · Stereo</small><div class="sg-bottom-wave"><div id="sgBottomWaveBars"></div><div id="sgBottomWavePlayed"><div id="sgBottomWavePlayedBars"></div></div><i id="sgBottomWaveCursor"></i></div><div class="sg-bottom-time"><b id="sgElapsed">00:00</b><span id="sgTotal">00:00</span></div></div><div class="sg-bpm-readout"><small>BPM</small><strong id="sgPlayerBpm">—</strong><small>TONALITET</small><strong id="sgPlayerKey">—</strong><div><span>SYNC</span><button class="active">ON</button><span>TEMPO</span><button class="active">ON</button></div></div></section>
+      <section class="sg-transport"><small>TRANSPORT</small><div><button id="sgPrevBtn">|◀<span>PREV</span></button><button id="sgPlayBtn" class="active">▶<span>PLAY</span></button><button id="sgPauseBtn">Ⅱ<span>PAUSE</span></button><button id="sgStopBtn">■<span>STOP</span></button><button id="sgNextBtn">▶|<span>NEXT</span></button></div><div class="sg-transport-lower"><button>RANDOM</button><button id="sgRepeatBtn" class="active">● REPEAT</button><button>A-B</button><button>MUTE</button></div></section>
+      <section class="sg-volume-knob"><small>VOLUME</small><div class="sg-knob"><i></i></div><input id="sgVolumeSlider" type="range" min="0" max="100" value="82"></section>
+      <div class="sg-status-bar"><span>SIGNAL GRID ENGINE v3.3.2</span><span><i class="green"></i> SPREMNO</span><span><i class="green"></i> CONNECTED</span><span class="sg-mini-wave-icon"></span></div>
+    </footer>
+
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div id="songModal" class="modal hidden">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-card modal-wide">
+      <button class="modal-close" data-close-modal>×</button>
+      <div class="modal-head"><img id="modalCover" alt="Omot"><div class="modal-head-main"><span id="modalModel" class="pill"></span><h2 id="modalTitle"></h2><p id="modalMeta"></p><div class="button-row"><button id="modalPlayBtn" class="btn primary small">▶ Pusti</button><button id="modalDownloadBrowserBtn" class="btn secondary small">Preuzmi u browser</button><button id="modalSaveToFolderBtn" class="btn secondary small">Sačuvaj u moj folder</button><a id="modalSunoLink" class="btn ghost small" target="_blank" rel="noopener">Otvori na Suno</a></div></div></div>
+      <div class="modal-tabs">
+        <button class="active" data-modal-tab="lyrics">Tekst</button><button data-modal-tab="timing">LRC/SRT tajming</button><button data-modal-tab="audio">Audio obrada</button><button data-modal-tab="tags">MP3 podaci</button><button data-modal-tab="folders">Folderi i objava</button><button data-modal-tab="prompt">Prompt</button><button data-modal-tab="notes">Beleške</button><button data-modal-tab="history">Istorija</button><button data-modal-tab="files">Fajlovi</button>
+      </div>
+
+      <div id="modalTab-lyrics" class="modal-tab active">
+        <div class="text-stats"><span id="lyricsChars">0 karaktera</span><span id="lyricsWords">0 reči</span><span id="lyricsLines">0 redova</span><span id="lyricsDuplicates">0 ponovljenih redova</span></div>
+        <div class="text-tools"><button data-text-action="clean">Očisti razmake</button><button data-text-action="blank">Ukloni prazne redove</button><button data-text-action="dedupe">Ukloni uzastopna ponavljanja</button><button data-text-action="remove-sections">Ukloni [Verse]/[Chorus]</button><button data-text-action="upper">VELIKA SLOVA</button><button data-text-action="lower">mala slova</button></div>
+        <div class="replace-row"><input id="lyricsFind" placeholder="Pronađi"><input id="lyricsReplace" placeholder="Zameni sa"><button id="replaceLyricsBtn" class="btn ghost small">Zameni sve</button></div>
+        <textarea id="modalLyrics" rows="18" spellcheck="true"></textarea>
+        <div class="button-row"><button id="saveLyricsBtn" class="btn primary small">Sačuvaj tekst</button><button class="btn secondary small lyric-download" data-format="txt">TXT</button><button class="btn secondary small lyric-download" data-format="lrc">LRC</button><button class="btn secondary small lyric-download" data-format="srt">SRT</button><button class="btn ghost small lyric-download" data-format="json">JSON</button><button id="copyLyricsBtn" class="btn ghost small">Kopiraj tekst</button></div>
+      </div>
+
+      <div id="modalTab-timing" class="modal-tab"><div class="section-title"><div><h3>Grafički LRC/SRT editor</h3><p class="muted">Menjaj početak, kraj i tekst svakog stiha. Dugmad pomeraju sve redove.</p></div><div class="button-row"><button id="shiftCuesBackBtn" class="btn ghost small">−0.1 s</button><button id="shiftCuesForwardBtn" class="btn ghost small">+0.1 s</button><button id="addCueBtn" class="btn secondary small">Dodaj red</button></div></div><div id="subtitleCueEditor" class="subtitle-cue-editor"></div><div class="button-row"><button id="saveSubtitleCuesBtn" class="btn primary">Sačuvaj LRC i SRT</button><button id="compareYoutubeTextBtn" class="btn secondary">Uporedi sa YouTube titlovima</button></div><label>YouTube video za poređenje<input id="compareYoutubeUrl" placeholder="https://youtube.com/watch?v=..."></label><div id="textCompareResult" class="tools-output"></div></div>
+
+      <div id="modalTab-audio" class="modal-tab">
+        <div class="audio-editor-grid">
+          <div class="audio-preview-panel">
+            <canvas id="waveformCanvas" width="1000" height="180"></canvas>
+            <div id="waveformMessage" class="muted">Brzi talasni prikaz se čuva u kešu i više ne učitava ceo MP3 u memoriju browsera.</div>
+            <div class="button-row"><button id="previewFullBtn" class="btn primary small">▶ Pusti celu</button><button id="previewClipBtn" class="btn secondary small">▶ Pusti isečak</button><button id="setStartCurrentBtn" class="btn ghost small">Početak = trenutno</button><button id="setEndCurrentBtn" class="btn ghost small">Kraj = trenutno</button></div>
+            <div id="audioInfoBox" class="audio-info-box"></div>
+          </div>
+          <div class="audio-controls form-panel compact-form">
+            <div class="two-inputs"><label>Početak (sek)<input id="trimStart" type="number" min="0" step="0.1" value="0"></label><label>Kraj (sek)<input id="trimEnd" type="number" min="0" step="0.1"></label></div>
+            <div class="quick-clips"><button data-quick-clip="15">15 s</button><button data-quick-clip="30">30 s</button><button data-quick-clip="60">60 s</button><button data-quick-clip="0">Cela pesma</button></div>
+            <div class="speed-mode-box"><strong>Režim obrade</strong><p class="muted">Brzo isecanje kopira originalni MP3 bez ponovnog kodiranja. Precizna obrada je potrebna samo za fade, normalizaciju, brzinu, glasnoću ili promenu formata.</p><select id="processingMode"><option value="auto" selected>Automatski — koristi brzo kada može</option><option value="quick">Najbrže — bez ponovnog kodiranja</option><option value="reencode">Precizno — obrada sa efektima</option></select></div>
+            <div class="two-inputs"><label>Format<select id="processFormat"><option value="mp3">MP3</option><option value="wav">WAV</option><option value="flac">FLAC</option><option value="m4a">M4A</option></select></label><label>Bitrate<select id="processBitrate"><option>320k</option><option>256k</option><option>192k</option><option>160k</option><option>128k</option></select></label></div>
+            <div class="two-inputs"><label>Fade in (sek)<input id="fadeIn" type="number" min="0" max="30" step="0.1" value="0"></label><label>Fade out (sek)<input id="fadeOut" type="number" min="0" max="30" step="0.1" value="0"></label></div>
+            <div class="two-inputs"><label>Glasnoća dB<input id="volumeDb" type="number" min="-30" max="30" step="0.5" value="0"></label><label>Brzina<select id="audioSpeed"><option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1" selected>1×</option><option value="1.1">1.1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option></select></label></div>
+            <div class="two-inputs"><label>Sample rate<select id="sampleRate"><option value="0">Zadrži original</option><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option><option value="32000">32 kHz</option></select></label><label>Kanali<select id="audioChannels"><option value="0">Zadrži original</option><option value="2">Stereo</option><option value="1">Mono</option></select></label></div>
+            <label class="check-label"><input id="normalizeAudio" type="checkbox"> Normalizuj glasnoću na -14 LUFS</label>
+            <label class="check-label"><input id="removeSilence" type="checkbox"> Ukloni tišinu sa početka i kraja</label>
+            <label class="check-label"><input id="replacePrimaryAudio" type="checkbox"> Postavi novu verziju kao glavni lokalni audio</label>
+            <label class="check-label"><input id="markLongDone" type="checkbox"> Dodaj pesmu u folder „Odrađene duže pesme“</label>
+            <label>Naziv nove verzije<input id="processedLabel" placeholder="YouTube kraća verzija"></label>
+            <label>Izlazni folder<div class="folder-path-row"><input id="processedTargetFolder"><button id="chooseProcessedFolderBtn" class="btn ghost small">Izaberi</button></div></label>
+            <button id="quickCutBtn" class="btn success full">⚡ BRZO ISECI — BEZ PONOVNOG KODIRANJA</button><button id="processAudioBtn" class="btn primary full">OBRADI / NAPRAVI NOVU AUDIO-VERZIJU</button><button id="processSelectedBatchBtn" class="btn secondary full">PRIMENI NA SVE IZABRANE PESME</button><div id="audioSpeedHint" class="inline-message success">Za obično isecanje koristi zeleno dugme. Fade, normalizacija i promena brzine uvek zahtevaju sporiju ponovnu obradu zvuka.</div>
+          </div>
+        </div>
+        <div class="panel form-panel">
+          <h3>Automatske najave za Shorts (30-50 s)</h3>
+          <p class="muted">Program sam analizira pesmu i iseca 3 kratke najave iz najglasnijih/najenergičnijih delova — spremne za Shorts najave na YouTube i društvenim mrežama.</p>
+          <div class="button-row"><button id="shortsTeasersBtn" class="btn primary">NAPRAVI 3 KRATKE NAJAVE</button></div>
+          <div id="shortsTeasersStatus" class="inline-message"></div>
+          <p class="muted">Ili upiši deo teksta pesme — program pronalazi taj deo u sačuvanim titlovima i iseca isečak oko njega.</p>
+          <div class="two-inputs"><label>Tekst iz pesme<input id="shortsTextQuery" placeholder="npr. o volim te"></label><label>Trajanje isečka (sek)<input id="shortsTextDuration" type="number" min="10" max="60" step="1" value="30"></label></div>
+          <div class="button-row"><button id="shortsTextClipBtn" class="btn secondary">ISECI PO TEKSTU</button></div>
+          <div id="shortsTextClipStatus" class="inline-message"></div>
+        </div>
+        <h3>Obrađene verzije</h3><div id="derivedFilesList" class="file-list"></div>
+        <div id="stemMixerPanel" class="panel form-panel hidden">
+          <h3>Mikser stemova</h3>
+          <p class="muted">Uskladi vokal, bubnjeve, bas i ostale izdvojene stemove iz poslednjeg izdvajanja — utišaj, solo, jačina i balans, svi u istom tempu. Radi u browseru (Web Audio), ne pravi nove fajlove dok ne sačuvaš mix.</p>
+          <div id="stemMixerTracks" class="stem-mixer-tracks"></div>
+          <div class="stem-mixer-transport button-row">
+            <button id="stemMixerPlayBtn" class="btn primary small">▶ Pusti mix</button>
+            <button id="stemMixerStopBtn" class="btn secondary small">■ Stani</button>
+            <input id="stemMixerSeek" type="range" min="0" max="1000" value="0" step="1">
+            <span id="stemMixerTime" class="muted">0:00 / 0:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="modalTab-tags" class="modal-tab">
+        <div class="tag-grid">
+          <label>Naslov<input id="tagTitle"></label><label>Izvođač<input id="tagArtist"></label><label>Album<input id="tagAlbum"></label><label>Žanr<input id="tagGenre"></label>
+          <label>Godina<input id="tagYear"></label><label>Broj trake<input id="tagTrack"></label><label>BPM<input id="tagBpm"></label><label>Muzički ključ<input id="tagKey"></label>
+          <label class="span-2">Autorska prava<input id="tagCopyright"></label><label class="span-2">Sajt / YouTube URL<input id="tagWebsite"></label>
+        </div>
+        <div class="button-row"><button id="saveTagFieldsBtn" class="btn primary">Sačuvaj u biblioteci</button><button id="writeMp3TagsBtn" class="btn secondary">Upiši sve u MP3</button><button id="renameSongFilesBtn" class="btn ghost">Preimenuj lokalne fajlove po naslovu</button></div>
+        <p class="muted">Pre upisa ID3 podataka program pravi rezervnu kopiju originalnog MP3 fajla.</p>
+      </div>
+
+      <div id="modalTab-folders" class="modal-tab">
+        <h3>Folderi</h3><div id="modalCollections" class="collection-checks"></div>
+        <h3>Objava na kanalu</h3><div class="two-inputs"><label>YouTube link<input id="youtubeUrl" placeholder="https://youtube.com/watch?v=..."></label><label>Datum objave<input id="youtubeDate" type="date"></label></div>
+        <button id="saveFoldersBtn" class="btn primary">Sačuvaj foldere i podatke o objavi</button>
+      </div>
+
+      <div id="modalTab-prompt" class="modal-tab"><label>Prompt<textarea id="modalPrompt" rows="10" readonly></textarea></label><label>Stil / tagovi<textarea id="modalTags" rows="5" readonly></textarea></label><button id="copyPromptBtn" class="btn secondary small">Kopiraj prompt</button></div>
+      <div id="modalTab-notes" class="modal-tab"><label>Moje oznake<input id="modalCustomTags" placeholder="balada, YouTube, finalna verzija"></label><label>Beleške<textarea id="modalNotes" rows="8"></textarea></label><label>Ocena<select id="modalRating"><option value="0">Bez ocene</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label><label class="check-label"><input id="modalFavorite" type="checkbox"> Favorit</label><button id="saveNotesBtn" class="btn primary small">Sačuvaj</button></div>
+      <div id="modalTab-history" class="modal-tab"><div class="section-title"><div><h3>Istorija izmena i Undo</h3><p class="muted">Program čuva do 100 prethodnih verzija naslova, teksta, tagova i foldera.</p></div><button id="refreshHistoryBtn" class="btn secondary small">Osveži</button></div><div id="songHistoryList" class="file-list"></div></div>
+      <div id="modalTab-files" class="modal-tab"><div id="modalFiles" class="file-list"></div><div class="panel form-panel warning-panel file-danger-zone"><h3>Održavanje zapisa</h3><p class="muted">Ove radnje menjaju samo lokalnu biblioteku programa. Ne brišu pesmu sa Suno naloga.</p><div class="button-row"><button id="resetSunoFieldsBtn" class="btn ghost small">Vrati naslov, autora i tekst sa Suno-a</button><button id="deleteLibrarySongBtn" class="btn danger small">Ukloni iz lokalne biblioteke</button></div><label class="check-label"><input id="deleteLocalFilesCheckbox" type="checkbox"> Obriši i lokalne fajlove sa diska</label></div></div>
+    </div>
+  </div>
+
+
+  <div id="securityLockModal" class="modal hidden security-lock-modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card security-lock-card">
+      <div class="security-lock-icon">🔒</div><h2>Program je zaključan</h2><p class="muted">Unesi lokalni PIN da otključaš Suno Pesme Studio.</p>
+      <label>PIN<input id="securityUnlockPin" type="password" autocomplete="current-password" inputmode="numeric"></label>
+      <button id="securityUnlockBtn" class="btn primary full">Otključaj</button><div id="securityUnlockMessage" class="inline-message"></div>
+    </div>
+  </div>
+
+  <div class="player" id="playerBar"><img id="playerCover" alt=""><div class="player-info"><strong id="playerTitle">Nijedna pesma nije puštena</strong><span id="playerSubtitle">Izaberi pesmu</span></div><audio id="audioPlayer" controls preload="metadata"></audio><div class="player-extra"><select id="playerSpeed" title="Brzina reprodukcije"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select><button id="repeatPlayerBtn" class="icon-btn" title="Ponavljanje">↻</button><button id="playQueueBtn" class="icon-btn" title="Pusti izabrane redom">≡</button></div><button id="closePlayerBtn" class="icon-btn">×</button></div>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

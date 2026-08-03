@@ -1,0 +1,98 @@
+{
+  "ok": true,
+  "tests": 10,
+  "passed": 10,
+  "errors": [],
+  "results": [
+    {
+      "test": "activate_and_persist:broadcast-redline",
+      "ok": true,
+      "data": {
+        "body": "broadcast-redline",
+        "stored": "broadcast-redline",
+        "selected": "broadcast-redline",
+        "activeCards": 1
+      }
+    },
+    {
+      "test": "activate_and_persist:street-mixtape",
+      "ok": true,
+      "data": {
+        "body": "street-mixtape",
+        "stored": "street-mixtape",
+        "selected": "street-mixtape",
+        "activeCards": 1
+      }
+    },
+    {
+      "test": "activate_and_persist:label-command",
+      "ok": true,
+      "data": {
+        "body": "label-command",
+        "stored": "label-command",
+        "selected": "label-command",
+        "activeCards": 1
+      }
+    },
+    {
+      "test": "activate_and_persist:vinyl-loft",
+      "ok": true,
+      "data": {
+        "body": "vinyl-loft",
+        "stored": "vinyl-loft",
+        "selected": "vinyl-loft",
+        "activeCards": 1
+      }
+    },
+    {
+      "test": "activate_and_persist:signal-grid",
+      "ok": true,
+      "data": {
+        "body": "signal-grid",
+        "stored": "signal-grid",
+        "selected": "signal-grid",
+        "activeCards": 1
+      }
+    },
+    {
+      "test": "settings_card_click:vinyl-loft",
+      "ok": true,
+      "data": {
+        "theme": "vinyl-loft",
+        "stored": "vinyl-loft"
+      }
+    },
+    {
+      "test": "vinyl_drawer_open",
+      "ok": true,
+      "data": {
+        "open": true,
+        "aria": "false"
+      }
+    },
+    {
+      "test": "vinyl_drawer_navigation",
+      "ok": true,
+      "data": {
+        "view": "view-library",
+        "drawer": false
+      }
+    },
+    {
+      "test": "signal_drawer_open",
+      "ok": true,
+      "data": {
+        "open": true,
+        "aria": "false"
+      }
+    },
+    {
+      "test": "signal_drawer_navigation",
+      "ok": true,
+      "data": {
+        "view": "view-tools",
+        "drawer": false
+      }
+    }
+  ]
+}
