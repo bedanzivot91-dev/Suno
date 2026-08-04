@@ -316,6 +316,21 @@ class LibraryDB:
                 );
                 CREATE INDEX IF NOT EXISTS idx_audio_fingerprints_source ON audio_fingerprints(source_type, source_id, algorithm);
 
+                -- Inverted index of Chromaprint sub-fingerprint values, so
+                -- "which songs could this clip be" is a fast indexed lookup
+                -- (SELECT ... WHERE hash IN (...) GROUP BY source_id) instead
+                -- of unpacking and audio-comparing against every song in the
+                -- library one by one. Populated alongside audio_fingerprints
+                -- whenever a signature is (re)computed.
+                CREATE TABLE IF NOT EXISTS audio_fingerprint_hashes (
+                    hash INTEGER NOT NULL,
+                    source_type TEXT NOT NULL,
+                    source_id TEXT NOT NULL,
+                    algorithm TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_audio_fp_hashes_lookup ON audio_fingerprint_hashes(algorithm, source_type, hash);
+                CREATE INDEX IF NOT EXISTS idx_audio_fp_hashes_source ON audio_fingerprint_hashes(source_type, source_id, algorithm);
+
                 CREATE TABLE IF NOT EXISTS sync_checkpoints (
                     source_key TEXT PRIMARY KEY,
                     source_label TEXT DEFAULT '',
@@ -1550,6 +1565,13 @@ class LibraryDB:
             ).fetchall()]
 
     def export_rows(self, ids: Iterable[str] | None = None) -> list[dict[str, Any]]:
+        # Was a per-row N+1 query (2 extra SELECTs per song for collections
+        # and derived_files) -- fine for a handful of ids, but export_rows()
+        # is also called with NO ids (the whole library) from song-finder
+        # analysis, YouTube matching, smart collections, etc. For a
+        # few-thousand-song library that's many thousands of blocking SQLite
+        # round-trips on every call, a real source of the program feeling
+        # like it chokes. Batched the same way list_songs() already does it.
         with self._connect() as conn:
             id_list = list(ids) if ids is not None else []
             if id_list:
@@ -1560,14 +1582,27 @@ class LibraryDB:
             else:
                 rows = conn.execute("SELECT * FROM songs ORDER BY created_at").fetchall()
             result = [dict(r) for r in rows]
+            if not result:
+                return result
+            song_ids = [r["id"] for r in result]
+            marks = ",".join("?" for _ in song_ids)
+            collections_by_song: dict[str, list[dict[str, Any]]] = {sid: [] for sid in song_ids}
+            for r in conn.execute(
+                f"""SELECT cs.song_id,c.id,c.slug,c.name,c.color,c.is_system FROM collections c
+                    JOIN collection_songs cs ON cs.collection_id=c.id WHERE cs.song_id IN ({marks}) ORDER BY c.name""",
+                song_ids,
+            ).fetchall():
+                collections_by_song.setdefault(str(r["song_id"]), []).append(
+                    {"id": r["id"], "slug": r["slug"], "name": r["name"], "color": r["color"], "is_system": r["is_system"]}
+                )
+            derived_by_song: dict[str, list[dict[str, Any]]] = {sid: [] for sid in song_ids}
+            for r in conn.execute(
+                f"SELECT * FROM derived_files WHERE song_id IN ({marks}) ORDER BY id", song_ids,
+            ).fetchall():
+                derived_by_song.setdefault(str(r["song_id"]), []).append(dict(r))
             for row in result:
-                row["collections"] = [dict(r) for r in conn.execute(
-                    "SELECT c.id,c.slug,c.name,c.color,c.is_system FROM collections c JOIN collection_songs cs ON cs.collection_id=c.id WHERE cs.song_id=? ORDER BY c.name",
-                    (row["id"],),
-                ).fetchall()]
-                row["derived_files"] = [dict(r) for r in conn.execute(
-                    "SELECT * FROM derived_files WHERE song_id=? ORDER BY id", (row["id"],)
-                ).fetchall()]
+                row["collections"] = collections_by_song.get(str(row["id"]), [])
+                row["derived_files"] = derived_by_song.get(str(row["id"]), [])
             return result
 
     # ---------------- YouTube kanali, objave i mogući duplikati ----------------
@@ -1799,7 +1834,73 @@ class LibraryDB:
         clause = " WHERE " + " AND ".join(where) if where else ""
         with self._lock, self._connect() as conn:
             cur = conn.execute("DELETE FROM audio_fingerprints" + clause, params)
+            self.clear_fingerprint_hashes(source_type, source_id, conn=conn)
             return int(cur.rowcount or 0)
+
+    def save_fingerprint_hashes(self, source_type: str, source_id: str, algorithm: str, hashes: list[int]) -> None:
+        """Rebuild this source's rows in the fast lookup index (audio_fingerprint_hashes).
+        Called right after save_audio_fingerprint() with the same signature's
+        raw chromaprint integers, so re-indexing a song naturally keeps the
+        index in sync -- no separate migration/backfill step is needed."""
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "DELETE FROM audio_fingerprint_hashes WHERE source_type=? AND source_id=? AND algorithm=?",
+                (str(source_type), str(source_id), str(algorithm)),
+            )
+            if hashes:
+                conn.executemany(
+                    "INSERT INTO audio_fingerprint_hashes(hash,source_type,source_id,algorithm) VALUES(?,?,?,?)",
+                    [(int(h) & 0xFFFFFFFF, str(source_type), str(source_id), str(algorithm)) for h in hashes],
+                )
+
+    def clear_fingerprint_hashes(self, source_type: str = "", source_id: str = "", conn: sqlite3.Connection | None = None) -> None:
+        where: list[str] = []
+        params: list[Any] = []
+        if source_type:
+            where.append("source_type=?")
+            params.append(str(source_type))
+        if source_id:
+            where.append("source_id=?")
+            params.append(str(source_id))
+        clause = " WHERE " + " AND ".join(where) if where else ""
+        if conn is not None:
+            conn.execute("DELETE FROM audio_fingerprint_hashes" + clause, params)
+            return
+        with self._lock, self._connect() as own_conn:
+            own_conn.execute("DELETE FROM audio_fingerprint_hashes" + clause, params)
+
+    def lookup_fingerprint_candidates(
+        self, hashes: list[int], algorithm: str, source_type: str = "suno", limit: int = 60, min_hits: int = 2,
+    ) -> list[dict[str, Any]]:
+        """Fast audio-content candidate lookup: which source_ids share the most
+        exact Chromaprint sub-fingerprint values with `hashes`. This is what
+        lets recognition scale to a large library without comparing full
+        signatures one by one, and without depending on video/song title text
+        at all -- pure audio content decides which songs are even considered."""
+        unique = list({int(h) & 0xFFFFFFFF for h in hashes})
+        if not unique:
+            return []
+        # SQLite's default limit on bound variables in one statement is 999;
+        # chunk the IN(...) lookup and merge hit counts in Python.
+        counts: dict[str, int] = {}
+        with self._connect() as conn:
+            for start in range(0, len(unique), 900):
+                chunk = unique[start:start + 900]
+                placeholders = ",".join("?" * len(chunk))
+                rows = conn.execute(
+                    f"""SELECT source_id, COUNT(*) as hits FROM audio_fingerprint_hashes
+                        WHERE algorithm=? AND source_type=? AND hash IN ({placeholders})
+                        GROUP BY source_id""",
+                    (str(algorithm), str(source_type), *chunk),
+                ).fetchall()
+                for row in rows:
+                    sid = str(row["source_id"])
+                    counts[sid] = counts.get(sid, 0) + int(row["hits"])
+        ranked = sorted(
+            ({"source_id": sid, "hits": hits} for sid, hits in counts.items() if hits >= min_hits),
+            key=lambda x: x["hits"], reverse=True,
+        )
+        return ranked[:max(1, limit)]
 
     def save_youtube_audio_analysis(self, song_id: str, video_id: str, analysis: dict[str, Any]) -> dict[str, Any]:
         fields = {

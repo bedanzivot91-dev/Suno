@@ -80,7 +80,7 @@ from v3_features import (
 import song_finder
 
 
-APP_VERSION = "3.3.3"
+APP_VERSION = "3.3.4"
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "app" / "web"
 USER_DATA_ROOT = Path(os.environ.get("SUNO_STUDIO_USER_DIR") or ROOT).expanduser().resolve()
@@ -1173,6 +1173,11 @@ def _signature_for_source(
         pack_signature(signature), str(identity.get("identity") or ""),
         float(identity.get("mtime") or 0), int(identity.get("size") or 0),
     )
+    if source_type == "suno":
+        # Only Suno songs are ever the answer to "which song is this", so
+        # only they need to be searchable via the fast hash index -- a
+        # YouTube video's own fingerprint is never looked up the other way.
+        DB.save_fingerprint_hashes(source_type, source_id, AUDIO_MATCH_VERSION, list(signature.get("chromaprint") or []))
     return signature
 
 
@@ -1219,6 +1224,24 @@ def _duplicate_audio_confirm(probable: list[dict[str, Any]], limit: int = DUPLIC
         "skipped_no_local_audio": skipped_no_local_audio, "limit": limit,
         "remaining": max(0, len(probable) - checked - skipped_no_local_audio),
     }
+
+
+def _audio_index_candidates_for_video(
+    video_signature: dict[str, Any], songs_by_id: dict[str, dict[str, Any]], limit: int = 60,
+) -> list[dict[str, Any]]:
+    """Audio-content-only candidate lookup via the fast hash index -- this is
+    what recognition actually relies on now. A video/Shorts whose TITLE has
+    nothing to do with the song (a common real case: Shorts are named after
+    the clip's subject, not the background music) still gets found, because
+    this never looks at title text at all, only which songs share Chromaprint
+    sub-fingerprint values with the clip's own audio. Falls back to nothing
+    (not an error) if the song library hasn't been indexed yet -- the caller
+    still has the metadata/duration path as a secondary source."""
+    hashes = [int(x) for x in (video_signature.get("chromaprint") or [])]
+    if not hashes:
+        return []
+    hits = DB.lookup_fingerprint_candidates(hashes, AUDIO_MATCH_VERSION, source_type="suno", limit=limit)
+    return [songs_by_id[h["source_id"]] for h in hits if h["source_id"] in songs_by_id]
 
 
 def _metadata_candidates_for_video(
@@ -1382,7 +1405,36 @@ def _analyse_video_against_songs(
         DB.update_youtube_video_audio_cache(video_id, str(youtube_audio), _sha256(youtube_audio))
     video_signature = _signature_for_source("youtube", video_id, youtube_audio, task, str(video.get("title") or video_id), force=force)
 
-    candidates = _metadata_candidates_for_video(video, songs, owned_ids, candidate_limit, deep)
+    # Audio-content lookup is the PRIMARY source of candidates -- it never
+    # looks at video/song title text, so a Shorts named after its subject
+    # rather than the song still finds the right song. The metadata/duration
+    # heuristic is only a secondary supplement, mainly useful for songs that
+    # haven't been through Pronalazač mojih pesama indexing yet.
+    songs_by_id = {str(s.get("id") or ""): s for s in songs}
+    audio_hits = _audio_index_candidates_for_video(video_signature, songs_by_id, limit=max(60, candidate_limit * 3))
+    metadata_candidates = _metadata_candidates_for_video(video, songs, owned_ids, candidate_limit, deep)
+    candidates: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    seen_ids: set[str] = set()
+    for song in audio_hits:
+        sid = str(song.get("id") or "")
+        if sid and sid not in seen_ids:
+            candidates.append((song, match_song_to_video(song, video, owned_ids)))
+            seen_ids.add(sid)
+    for song, metadata_match in metadata_candidates:
+        sid = str(song.get("id") or "")
+        if sid and sid not in seen_ids:
+            candidates.append((song, metadata_match))
+            seen_ids.add(sid)
+
+    # A Shorts-length clip legitimately has far less matchable audio than a
+    # full reupload, so it needs song_finder's shorter-clip thresholds (see
+    # song_finder.py) instead of the strict 12s/46-score defaults tuned for
+    # full-length video completeness checks.
+    video_duration = float(video.get("duration") or 0)
+    is_short_clip = 0 < video_duration <= 90
+    min_match_seconds = song_finder.POSSIBLE_MIN_SECONDS if is_short_clip else 12.0
+    min_candidate_score = song_finder.POSSIBLE_MIN_SCORE if is_short_clip else 46.0
+
     analysed: list[dict[str, Any]] = []
     skipped = 0
     for song, metadata_match in candidates:
@@ -1394,7 +1446,7 @@ def _analyse_video_against_songs(
             continue
         try:
             signature = _signature_for_source("suno", str(song.get("id") or ""), source, task, str(song.get("title") or song.get("id")), force=force)
-            analysis = compare_signatures(signature, video_signature)
+            analysis = compare_signatures(signature, video_signature, min_match_seconds=min_match_seconds, min_candidate_score=min_candidate_score)
         except Exception as exc:
             skipped += 1
             task.log(f"Nije analiziran Suno kandidat „{song.get('title')}“: {exc}", "warning")
@@ -2886,9 +2938,24 @@ SONG_FINDER_TEMPO_VARIANTS = (0.97, 1.03, 0.93, 1.08)
 
 
 def _song_finder_candidates(upload_signature: dict[str, Any], songs: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
+    # Narrow to a real audio-content shortlist via the fast hash index first
+    # -- comparing against every cached fingerprint one by one (the old
+    # behaviour) meant a single dropped clip did a full compare_signatures()
+    # pass over the WHOLE library (thousands of songs for a large one),
+    # which is exactly the kind of thing that makes the program feel like
+    # it's choking. A query with no chromaprint hashes at all (fpcalc
+    # unavailable for this particular file) still falls back to a full
+    # scan so the dependency-free envelope comparator gets a chance.
+    hashes = [int(x) for x in (upload_signature.get("chromaprint") or [])]
+    if hashes:
+        songs_by_id = {str(s.get("id") or ""): s for s in songs}
+        hits = DB.lookup_fingerprint_candidates(hashes, AUDIO_MATCH_VERSION, source_type="suno", limit=150)
+        shortlist = [songs_by_id[h["source_id"]] for h in hits if h["source_id"] in songs_by_id]
+    else:
+        shortlist = songs
     candidates: list[dict[str, Any]] = []
     checked = 0
-    for song in songs:
+    for song in shortlist:
         song_id = str(song.get("id") or "")
         cached = DB.get_audio_fingerprint("suno", song_id, AUDIO_MATCH_VERSION)
         if not cached:
