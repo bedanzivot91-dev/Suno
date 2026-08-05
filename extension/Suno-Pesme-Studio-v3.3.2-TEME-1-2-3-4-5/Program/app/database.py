@@ -1845,11 +1845,32 @@ class LibraryDB:
             self.clear_fingerprint_hashes(source_type, source_id, conn=conn)
             return int(cur.rowcount or 0)
 
+    def list_fingerprints_missing_hash_index(self, source_type: str, algorithm: str) -> list[dict[str, Any]]:
+        """Fingerprints that exist but were never (or no longer) written
+        into the fast lookup index -- e.g. cached before that index existed.
+        Used to self-heal without needing a full, expensive re-index."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                """SELECT af.source_id AS source_id, af.payload AS payload FROM audio_fingerprints af
+                   WHERE af.source_type=? AND af.algorithm=?
+                   AND NOT EXISTS (
+                       SELECT 1 FROM audio_fingerprint_hashes h
+                       WHERE h.source_type=af.source_type AND h.source_id=af.source_id AND h.algorithm=af.algorithm
+                   )""",
+                (str(source_type), str(algorithm)),
+            ).fetchall()
+            return [{"source_id": r["source_id"], "payload": r["payload"]} for r in rows]
+
+    def has_fingerprint_hashes(self, source_type: str, source_id: str, algorithm: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM audio_fingerprint_hashes WHERE source_type=? AND source_id=? AND algorithm=? LIMIT 1",
+                (str(source_type), str(source_id), str(algorithm)),
+            ).fetchone()
+            return row is not None
+
     def save_fingerprint_hashes(self, source_type: str, source_id: str, algorithm: str, hashes: list[int]) -> None:
-        """Rebuild this source's rows in the fast lookup index (audio_fingerprint_hashes).
-        Called right after save_audio_fingerprint() with the same signature's
-        raw chromaprint integers, so re-indexing a song naturally keeps the
-        index in sync -- no separate migration/backfill step is needed."""
+        """Rebuild this source's rows in the fast lookup index (audio_fingerprint_hashes)."""
         with self._lock, self._connect() as conn:
             conn.execute(
                 "DELETE FROM audio_fingerprint_hashes WHERE source_type=? AND source_id=? AND algorithm=?",

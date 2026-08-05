@@ -80,7 +80,7 @@ from v3_features import (
 import song_finder
 
 
-APP_VERSION = "3.3.6"
+APP_VERSION = "3.3.7"
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "app" / "web"
 USER_DATA_ROOT = Path(os.environ.get("SUNO_STUDIO_USER_DIR") or ROOT).expanduser().resolve()
@@ -989,6 +989,7 @@ def scan_global_youtube(task: TaskState, options: dict[str, Any]) -> None:
     songs = all_songs[:max_songs]
     if not songs:
         raise RuntimeError("Nema pesama za pretragu.")
+    _backfill_missing_fingerprint_hashes()
     channels = DB.list_youtube_channels()
     owned_ids = {str(c.get("channel_id") or "") for c in channels if int(c.get("is_owned") or 0) == 1}
     include_owned = bool(options.get("include_owned_channels", True))
@@ -1157,7 +1158,19 @@ def _signature_for_source(
         remote = str(source).startswith(("http://", "https://"))
         if remote or (cached_identity and cached_identity == identity.get("identity")):
             try:
-                return unpack_signature(cached.get("payload") or b"")
+                signature = unpack_signature(cached.get("payload") or b"")
+                # Songs indexed before the audio_fingerprint_hashes table
+                # existed (or before this backfill existed) have a real,
+                # valid cached signature but were never written into the
+                # fast lookup index -- the cache-hit path used to return
+                # here unconditionally, so re-running "INDEKSIRAJ SVE MOJE
+                # PESME" on an already-cached library looked like it
+                # finished instantly but silently never populated the
+                # index those songs need to ever be found. Cheap existence
+                # check, only backfills when actually missing.
+                if source_type == "suno" and not DB.has_fingerprint_hashes(source_type, source_id, AUDIO_MATCH_VERSION):
+                    DB.save_fingerprint_hashes(source_type, source_id, AUDIO_MATCH_VERSION, list(signature.get("chromaprint") or []))
+                return signature
             except Exception as exc:
                 runtime_log(f"Audio fingerprint cache nije pročitan ({source_type}:{source_id}): {exc}", "warning")
 
@@ -1556,6 +1569,7 @@ def analyze_owned_youtube_audio(task: TaskState, options: dict[str, Any]) -> Non
         raise RuntimeError("Suno biblioteka je prazna ili nema izabranih pesama.")
     ensure_ffmpeg(lambda m, p: task.log(m, "info") if p in (0, 100) else None)
     ensure_ytdlp(lambda m, p: task.log(m, "info") if p in (0, 100) else None)
+    _backfill_missing_fingerprint_hashes()
     max_pages = max(1, min(int(options.get("max_pages") or 10), 100))
     max_videos = max(1, min(int(options.get("max_videos_per_channel") or 100), 500))
     owned_ids = {str(c.get("channel_id") or "") for c in channels}
@@ -1752,6 +1766,7 @@ def analyze_youtube_url_task(task: TaskState, options: dict[str, Any]) -> None:
         raise RuntimeError("Suno biblioteka je prazna ili nema izabranih pesama.")
     ensure_ffmpeg(lambda m, p: task.log(m, "info") if p in (0, 100) else None)
     ensure_ytdlp(lambda m, p: task.log(m, "info") if p in (0, 100) else None)
+    _backfill_missing_fingerprint_hashes()
     task.log("Čitam podatke o YouTube videu...")
     video = inspect_youtube_video(url, lambda: task.cancel_event.is_set(), cookie_browser=youtube_cookie_browser())
     channel_id = str(video.get("channel_id") or "")
@@ -2937,6 +2952,28 @@ def song_finder_index_task(task: TaskState, options: dict[str, Any]) -> None:
 SONG_FINDER_TEMPO_VARIANTS = (0.97, 1.03, 0.93, 1.08)
 
 
+def _backfill_missing_fingerprint_hashes(source_type: str = "suno") -> int:
+    """Self-heal songs whose audio_fingerprints row predates the fast
+    lookup index -- e.g. indexed once before that table existed, or before
+    this backfill existed. _signature_for_source() also backfills on its
+    own cache-hit path, but that only runs again when the user re-triggers
+    indexing; this makes recognition itself self-correcting on the very
+    next attempt, no manual re-index click required. Cheap: the payload is
+    already stored locally, no audio decode/fpcalc call happens here."""
+    missing = DB.list_fingerprints_missing_hash_index(source_type, AUDIO_MATCH_VERSION)
+    fixed = 0
+    for row in missing:
+        try:
+            signature = unpack_signature(row.get("payload") or b"")
+            DB.save_fingerprint_hashes(source_type, str(row.get("source_id") or ""), AUDIO_MATCH_VERSION, list(signature.get("chromaprint") or []))
+            fixed += 1
+        except Exception as exc:
+            runtime_log(f"Nije popravljen audio indeks za {row.get('source_id')}: {exc}", "warning")
+    if fixed:
+        runtime_log(f"Audio indeks za pretragu je automatski dopunjen za {fixed} pesama koje su nedostajale.", "info")
+    return fixed
+
+
 def _song_finder_candidates(upload_signature: dict[str, Any], songs: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
     # Narrow to a real audio-content shortlist via the fast hash index first
     # -- comparing against every cached fingerprint one by one (the old
@@ -3004,6 +3041,7 @@ def song_finder_analyze(path: Path) -> dict[str, Any]:
         raise RuntimeError("Fajl nije pronađen.")
     if not song_finder.is_supported_file(path):
         raise RuntimeError(f"Format {path.suffix or '?'} nije podržan za Pronalazač mojih pesama.")
+    _backfill_missing_fingerprint_hashes()
     file_sha256 = sha256_file(path)
     upload_signature = extract_signature(path)
     # Matching only ever reads the already-cached fingerprint blob (see
