@@ -1516,7 +1516,7 @@ function songFinderResultCard(r){
   const retryBtn=historyId?`<button class="btn ghost small song-finder-retry" data-id="${historyId}">Ponovi</button>`:'';
   if(!res.found){
     const nothingIndexed=Number(res.songs_indexed_total||0)===0;
-    const hint=nothingIndexed?'<p class="muted">Indeks je prazan — nijedna pesma još nije lokalno otisnuta. Prvo preuzmi audio fajlove svojih pesama („Preuzimanje”), pa pokreni „INDEKSIRAJ SVE MOJE PESME”.</p>':'';
+    const hint=nothingIndexed?'<p class="muted">Indeks audio-otisaka je prazan (0 indeksiranih pesama) — zato ništa nije ni provereno, ovo NIJE stvarna provera da pesma nedostaje. Idi na dugme „INDEKSIRAJ SVE MOJE PESME” iznad i pokreni indeksiranje (može potrajati), pa pokušaj ponovo.</p>':'';
     return `<article class="youtube-match-card"><div class="youtube-match-main">${songFinderBadge('not_found')}<h3>${escapeHtml(r?.original_filename||res.file||'Isečak')}</h3><p>Provereno pesama u indeksu: ${Number(res.songs_checked||0)} / ${Number(res.songs_indexed_total||0)}.</p>${hint}</div></article>`;
   }
   if(res.multiple_songs_detected){

@@ -80,7 +80,7 @@ from v3_features import (
 import song_finder
 
 
-APP_VERSION = "3.3.4"
+APP_VERSION = "3.3.5"
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "app" / "web"
 USER_DATA_ROOT = Path(os.environ.get("SUNO_STUDIO_USER_DIR") or ROOT).expanduser().resolve()
@@ -3044,6 +3044,14 @@ def song_finder_analyze(path: Path) -> dict[str, Any]:
     primary = ranked[0] if ranked else None
     overall_status = primary["status"] if primary else song_finder.STATUS_NOT_FOUND
     distinct_matches = song_finder.select_distinct_matches(ranked)
+    # Was len(songs) -- the WHOLE library's size, not how many of them are
+    # actually indexed. The frontend's "indeks je prazan, prvo indeksiraj"
+    # hint (songFinderResultCard in app.js) keys off this being 0, so with
+    # the old value it could never fire: a library of 3000 songs with ZERO
+    # of them indexed yet still showed "songs_indexed_total: 3000", making
+    # "not found" read as a real negative result instead of "nothing was
+    # ever actually checked."
+    indexed_total = DB.count_audio_fingerprints("suno", AUDIO_MATCH_VERSION)
     result = {
         "found": bool(primary),
         "provider": "local_library",
@@ -3052,7 +3060,7 @@ def song_finder_analyze(path: Path) -> dict[str, Any]:
         "file": str(path), "file_sha256": file_sha256, "duration": upload_signature.get("duration"),
         "engine": "chromaprint+spectral", "algorithm_version": AUDIO_MATCH_VERSION,
         "status": overall_status, "status_label": song_finder.STATUS_LABELS_SR.get(overall_status, overall_status),
-        "songs_checked": checked, "songs_indexed_total": len(songs),
+        "songs_checked": checked, "songs_indexed_total": indexed_total, "songs_library_total": len(songs),
         "primary": primary, "alternatives": ranked[1:4], "matches": ranked,
         "distinct_matches": distinct_matches, "multiple_songs_detected": len(distinct_matches) >= 2,
     }

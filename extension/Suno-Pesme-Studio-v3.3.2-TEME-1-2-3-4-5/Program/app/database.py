@@ -1822,6 +1822,14 @@ class LibraryDB:
             ).fetchone()
             return dict(row) if row else None
 
+    def count_audio_fingerprints(self, source_type: str, algorithm: str) -> int:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) c FROM audio_fingerprints WHERE source_type=? AND algorithm=?",
+                (str(source_type), str(algorithm)),
+            ).fetchone()
+            return int(row["c"] or 0)
+
     def clear_audio_fingerprints(self, source_type: str = "", source_id: str = "") -> int:
         where: list[str] = []
         params: list[Any] = []
