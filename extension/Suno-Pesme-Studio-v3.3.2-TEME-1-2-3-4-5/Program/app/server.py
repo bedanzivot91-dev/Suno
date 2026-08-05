@@ -80,7 +80,7 @@ from v3_features import (
 import song_finder
 
 
-APP_VERSION = "3.3.5"
+APP_VERSION = "3.3.6"
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "app" / "web"
 USER_DATA_ROOT = Path(os.environ.get("SUNO_STUDIO_USER_DIR") or ROOT).expanduser().resolve()

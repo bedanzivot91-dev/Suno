@@ -238,14 +238,21 @@
     <aside class="sg-left-console" id="sgLeftConsole">
       <div class="sg-rail-label">SIGNAL GRID RACK</div>
       <div class="sg-module-title"><span>NAVIGACIJA</span><i></i></div>
-      <nav class="sg-nav-list" aria-label="Signal Grid navigacija">
+      <nav class="sg-nav-list sg-nav-list-full" aria-label="Signal Grid navigacija">
         <button class="sg-nav active" data-sg-view="home"><span>⌂</span><b>POČETNA</b><i></i></button>
         <button class="sg-nav" data-sg-view="library"><span>☷</span><b>BIBLIOTEKA</b><i></i></button>
-        <button class="sg-nav" data-sg-view="import"><span>〰</span><b>SUNO</b><i></i></button>
-        <button class="sg-nav" data-sg-view="tools"><span>▶</span><b>YOUTUBE</b><i></i></button>
-        <button class="sg-nav" data-sg-view="recognition"><span>AI</span><b>AI ALATI</b><i></i></button>
-        <button class="sg-nav" data-sg-view="audio"><span>⇄</span><b>KONVERTOR</b><i></i></button>
+        <button class="sg-nav" data-sg-view="folders"><span>▰</span><b>FOLDERI</b><i></i></button>
+        <button class="sg-nav" data-sg-view="audio"><span>⇄</span><b>AUDIO OBRADA</b><i></i></button>
+        <button class="sg-nav" data-sg-view="download"><span>⇩</span><b>PREUZIMANJE</b><i></i></button>
+        <button class="sg-nav" data-sg-view="import"><span>〰</span><b>SUNO I UVOZ</b><i></i></button>
+        <button class="sg-nav" data-sg-view="recognition"><span>AI</span><b>PRONALAZAČ</b><i></i></button>
+        <button class="sg-nav" data-sg-view="smart"><span>⚑</span><b>PAMETNA BIBLIOTEKA</b><i></i></button>
+        <button class="sg-nav" data-sg-view="versions"><span>⇄</span><b>VERSION LAB</b><i></i></button>
         <button class="sg-nav" data-sg-view="release"><span>◇</span><b>METAPODACI</b><i></i></button>
+        <button class="sg-nav" data-sg-view="tools"><span>▶</span><b>YOUTUBE ALATI</b><i></i></button>
+        <button class="sg-nav" data-sg-view="production"><span>⚡</span><b>AI PRODUKCIJA</b><i></i></button>
+        <button class="sg-nav" data-sg-view="stats"><span>◔</span><b>STATISTIKA</b><i></i></button>
+        <button class="sg-nav" data-sg-view="logs"><span>≡</span><b>DNEVNIK</b><i></i></button>
         <button class="sg-nav" data-sg-view="settings"><span>⚙</span><b>PODEŠAVANJA</b><i></i></button>
       </nav>
       <button class="sg-all-pages" id="sgAllPagesToggle" type="button">☷ SVI MODULI <small>15</small></button>
@@ -854,6 +861,7 @@
 
     <aside class="sg-right-console" id="sgRightConsole">
       <div class="sg-rail-label right">SIGNAL GRID RACK</div>
+      <section class="sg-side-module sg-accounts-module"><div class="sg-module-title"><span>NALOZI</span><i></i></div><button id="sgHomeConnectSunoBtn" type="button"><span id="sgHomeSunoDot" class="sg-account-dot"></span> Poveži Suno nalog</button><button id="sgHomeConnectYoutubeBtn" type="button"><span id="sgHomeYoutubeDot" class="sg-account-dot"></span> Poveži YouTube nalog</button></section>
       <section class="sg-side-module"><div class="sg-module-title"><span>BRZI ALATI</span><i></i></div><button data-sg-view="audio">◉ ANALIZA TALASA</button><button data-sg-view="audio">〰 NORMALIZUJ</button><button data-sg-view="audio">♬ IZOLUJ VOCAL</button><button data-sg-view="audio">◁ UKLONI TIŠINU</button><button data-sg-view="recognition">◷ DETEKTUJ BPM</button><button data-sg-view="audio">↟ PODIGNI TON</button><button data-sg-view="audio">◇ STEM EKSTRAKCIJA</button></section>
       <section class="sg-side-module sg-stat-module"><div class="sg-module-title"><span>STATISTIKA</span><i></i></div><div><span>UKUPNO PESAMA</span><b id="sgTotalSongs">0</b></div><div><span>UKUPNO TRAJANJE</span><b id="sgTotalDuration">0:00:00</b></div><div><span>UKUPNO IZVOĐAČA</span><b id="sgTotalArtists">0</b></div><div><span>ŽANROVA</span><b id="sgTotalGenres">0</b></div><div><span>ALBUMI</span><b id="sgTotalAlbums">0</b></div><div><span>DODATO DANAS</span><b id="sgAddedToday">0</b></div></section>
       <section class="sg-side-module sg-genres"><div class="sg-module-title"><span>ŽANROVI</span><i></i></div><div><span>Pop</span><i><b style="width:72%"></b></i><em>25%</em></div><div><span>Rock</span><i><b style="width:58%"></b></i><em>18%</em></div><div><span>Hip Hop</span><i><b style="width:49%"></b></i><em>16%</em></div><div><span>Folk</span><i><b style="width:38%"></b></i><em>12%</em></div><div><span>Elektronika</span><i><b style="width:28%"></b></i><em>9%</em></div><div><span>Drugo</span><i><b style="width:61%"></b></i><em>20%</em></div></section>
