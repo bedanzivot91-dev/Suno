@@ -39,6 +39,21 @@ ALGORITHM_VERSION = "sps-spectral-v4-fpcalc"
 FRAME_SECONDS = 0.5
 SAMPLE_RATE = 2000
 
+# Chromaprint bit-similarity -> percentage score mapping. Calibrated against
+# a REAL match (a genuine Suno song vs. a YouTube Shorts remix of it, voice
+# and edits mixed over the music): the correct segment was found (28
+# continuous seconds, per-frame similarity peaking at 0.97) but its average
+# quality of 0.79 scored a flat 0% under the previous 0.80-1.00 mapping --
+# that range was never validated against real audio, since the FFmpeg
+# chromaprint muxer this scoring was originally written for never actually
+# worked (see _extract_chromaprint's fpcalc rewrite). Uncorrelated/random
+# 32-bit fingerprints agree on ~50% of bits by chance, so the floor is set
+# just above that with a safety margin; the ceiling reflects that real
+# re-encoded/mixed audio rarely approaches literal 1.0 even for a clean
+# match.
+CHROMAPRINT_SCORE_FLOOR = 0.55
+CHROMAPRINT_SCORE_CEILING = 0.92
+
 
 class AudioMatchCancelled(RuntimeError):
     pass
@@ -901,7 +916,7 @@ def compare_signatures(
     for candidate in raw_candidates:
         # Convert similarity into a conservative percentage before accepting it.
         if str(candidate.get("metric") or "") == "chromaprint":
-            score = max(0.0, min(100.0, (float(candidate["quality"]) - 0.80) / 0.18 * 100.0))
+            score = max(0.0, min(100.0, (float(candidate["quality"]) - CHROMAPRINT_SCORE_FLOOR) / (CHROMAPRINT_SCORE_CEILING - CHROMAPRINT_SCORE_FLOOR) * 100.0))
         else:
             score = max(0.0, min(100.0, (float(candidate["quality"]) - 0.34) / 0.48 * 100.0))
         if score < min_candidate_score or float(candidate["matched_seconds"]) < min_match_seconds:
@@ -931,7 +946,7 @@ def compare_signatures(
     if not selected:
         selected = [dict(raw_candidates[0])]
         if str(selected[0].get("metric") or "") == "chromaprint":
-            selected[0]["audio_score"] = max(0.0, min(100.0, (float(selected[0]["quality"]) - 0.80) / 0.18 * 100.0))
+            selected[0]["audio_score"] = max(0.0, min(100.0, (float(selected[0]["quality"]) - CHROMAPRINT_SCORE_FLOOR) / (CHROMAPRINT_SCORE_CEILING - CHROMAPRINT_SCORE_FLOOR) * 100.0))
         else:
             selected[0]["audio_score"] = max(0.0, min(100.0, (float(selected[0]["quality"]) - 0.34) / 0.48 * 100.0))
 
