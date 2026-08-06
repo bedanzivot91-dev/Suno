@@ -244,6 +244,7 @@ async function loadStatus() {
     if ($('sunoKeepaliveMinutes')) $('sunoKeepaliveMinutes').value = String(data.suno_keepalive_minutes || 4);
     if ($('sunoAutoReopenBrowser')) $('sunoAutoReopenBrowser').checked = Boolean(data.suno_auto_reopen_browser);
     renderSunoSessionStatus(data.suno_session || {});
+    renderV3ChannelProfiles(data.youtube_oauth || {});
     const source = $('sourceFilter'); if (source) { const previous = source.value; source.innerHTML = '<option value="">Svi izvori</option>' + (data.sources || []).map((x) => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join(''); if ([...source.options].some((o) => o.value === previous)) source.value = previous; }
     if ($('copyrightOwnerNameInput') && !document.activeElement?.isSameNode($('copyrightOwnerNameInput'))) $('copyrightOwnerNameInput').value = data.copyright_owner_name || $('copyrightOwnerNameInput').value || '';
     if ($('youtubeCookiesBrowser')) $('youtubeCookiesBrowser').value = data.youtube_cookies_browser || 'none';
@@ -252,6 +253,29 @@ async function loadStatus() {
   } catch (error) {
     $('connectionBadge').querySelector('span').textContent = 'Lokalni server nije dostupan';
   }
+}
+function renderV3ChannelProfiles(oauth) {
+  // Was a fixed 2-option placeholder select never wired to a real channel
+  // -- the upload code path reads options.profile_id (server.py's
+  // v3_youtube_upload_task), but this dropdown's value was only ever used
+  // as free-text description filler (channel_profile). With more than one
+  // Google account connected, every upload silently went to whichever
+  // account was connected most recently, regardless of what was "selected"
+  // here. This now lists real connected accounts, keyed by profile_id.
+  const select = $('v3ChannelProfile');
+  if (!select) return;
+  const profiles = Array.isArray(oauth?.profiles) ? oauth.profiles : [];
+  const previous = select.value;
+  if (!profiles.length) {
+    select.innerHTML = '<option value="">Nijedan YouTube nalog nije povezan — poveži ga u YouTube alatima</option>';
+    select.value = '';
+    return;
+  }
+  select.innerHTML = profiles.map((p) => {
+    const label = `${p.email || 'Google nalog'}${(p.channel_titles || []).length ? ' — ' + p.channel_titles.join(', ') : ''}`;
+    return `<option value="${escapeHtml(p.profile_id)}">${escapeHtml(label)}</option>`;
+  }).join('');
+  if (profiles.some((p) => p.profile_id === previous)) select.value = previous;
 }
 function renderTask(task) {
   const panel = $('taskPanel'); if (!task) { panel.classList.add('hidden'); return; }
@@ -1377,9 +1401,9 @@ async function runV3Organize(){try{const ids=selectedIds();const body={ids,targe
 async function loadV3ShortSuggestions(){const id=v3SongId();if(!id)return toast('Izaberi pesmu u Biblioteci.','warning');try{const d=await api(`/api/v3/shorts/suggest?id=${encodeURIComponent(id)}`,{timeoutMs:120000,retries:0});v3Show(d.result,'Predloženi Shorts delovi');}catch(e){toast(e.message,'error',12000);}}
 async function runV3Shorts(){const id=v3SongId();if(!id)return toast('Izaberi pesmu u Biblioteci.','warning');try{v3UseTask(await api('/api/v3/shorts/render',{method:'POST',body:{id,durations:[15,30,45,60],normalize:true}}));}catch(e){toast(e.message,'error',12000);}}
 async function runV3Lyric(){const id=v3SongId();if(!id)return toast('Izaberi pesmu u Biblioteci.','warning');try{v3UseTask(await api('/api/v3/lyric-video',{method:'POST',body:{id,aspect:$('v3LyricAspect').value,background:$('v3LyricBackground').value,font:$('v3LyricFont').value,font_size:Number($('v3LyricFontSize').value||54)}}));}catch(e){toast(e.message,'error',12000);}}
-function v3YoutubePayload(){const local=$('v3YoutubePublishAt').value;let publishAt='';if(local){const d=new Date(local);if(!Number.isNaN(d.getTime()))publishAt=d.toISOString();}return {id:v3SongId(),video_path:$('v3YoutubeVideoPath').value,thumbnail_path:$('v3YoutubeThumbnailPath').value,playlist_id:$('v3YoutubePlaylistId').value.trim(),publish_at:publishAt,channel_profile:$('v3ChannelProfile').value,privacy_status:$('v3YoutubePrivacy').value};}
+function v3YoutubePayload(){const local=$('v3YoutubePublishAt').value;let publishAt='';if(local){const d=new Date(local);if(!Number.isNaN(d.getTime()))publishAt=d.toISOString();}const select=$('v3ChannelProfile');const profileId=select?select.value:'';const channelLabel=select?.selectedOptions?.[0]?.textContent||'';return {id:v3SongId(),video_path:$('v3YoutubeVideoPath').value,thumbnail_path:$('v3YoutubeThumbnailPath').value,playlist_id:$('v3YoutubePlaylistId').value.trim(),publish_at:publishAt,profile_id:profileId,channel_profile:channelLabel,privacy_status:$('v3YoutubePrivacy').value};}
 async function createV3YoutubePackage(){const body=v3YoutubePayload();if(!body.id)return toast('Izaberi pesmu u Biblioteci.','warning');try{const d=await api('/api/v3/youtube/package',{method:'POST',body});v3Show(d,'YouTube SEO paket');toast('YouTube paket je napravljen.','success');}catch(e){toast(e.message,'error',12000);}}
-async function runV3YoutubeUpload(){const body=v3YoutubePayload();if(!body.id)return toast('Izaberi pesmu u Biblioteci.','warning');if(!body.video_path)return toast('Izaberi gotov MP4 video.','warning');const mode=body.publish_at?`zakazano za ${new Date(body.publish_at).toLocaleString()}`:`kao „${body.privacy_status}“`;const ok=confirm(`YouTube upload će stvarno poslati video ${mode}. Ovo nije simulacija. Nastaviti?`);if(!ok)return;body.confirm_upload=true;try{v3UseTask(await api('/api/v3/youtube/upload',{method:'POST',body}));}catch(e){toast(e.message,'error',12000);}}
+async function runV3YoutubeUpload(){const body=v3YoutubePayload();if(!body.id)return toast('Izaberi pesmu u Biblioteci.','warning');if(!body.video_path)return toast('Izaberi gotov MP4 video.','warning');if(!body.profile_id)return toast('Izaberi Google nalog/kanal za upload.','error');const mode=body.publish_at?`zakazano za ${new Date(body.publish_at).toLocaleString()}`:`kao „${body.privacy_status}“`;const ok=confirm(`YouTube upload će stvarno poslati video ${mode}. Ovo nije simulacija. Nastaviti?`);if(!ok)return;body.confirm_upload=true;try{v3UseTask(await api('/api/v3/youtube/upload',{method:'POST',body}));}catch(e){toast(e.message,'error',12000);}}
 async function createV3Proof(){const id=v3SongId();if(!id)return toast('Izaberi pesmu u Biblioteci.','warning');try{const d=await api('/api/v3/proof',{method:'POST',body:{id}});v3Show(d,'Dokazni paket');if(d.download_url)downloadFromUrl(d.download_url);}catch(e){toast(e.message,'error',12000);}}
 async function runV3Panako(){const ids=selectedIds();if(!ids.length&&!v3SongId())return toast('Izaberi bar jednu pesmu.','warning');try{v3UseTask(await api('/api/v3/panako/index',{method:'POST',body:{ids:ids.length?ids:[v3SongId()]}}));}catch(e){toast(e.message,'error',12000);}}
 async function runV3Snapshot(){try{v3UseTask(await api('/api/v3/snapshot',{method:'POST',body:{include_tools:false}}));}catch(e){toast(e.message,'error',12000);}}

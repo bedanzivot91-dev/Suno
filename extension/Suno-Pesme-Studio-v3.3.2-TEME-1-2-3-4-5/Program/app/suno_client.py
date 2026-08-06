@@ -402,21 +402,30 @@ class SunoClient:
             params["trashed"] = "true"
         try:
             result = self.json_request("/api/feed/v2?" + urllib.parse.urlencode(params), retries=2)
-            items = self._local_filter(extract_items(result), liked=liked, trashed=trashed)
+            raw_items = extract_items(result)
+            items = self._local_filter(raw_items, liked=liked, trashed=trashed)
             page = int(params["page"])
-            next_cursor = str(page + 1) if items else None
+            # Was `if items` (the FILTERED count) -- a "liked only" or
+            # "trashed only" sync could hit a raw page with zero matching
+            # songs on it, and stop pagination right there even though
+            # later pages still have matching songs. Whether the underlying
+            # feed page had more content is what decides whether to keep
+            # paging; the liked/trashed filter is applied client-side and
+            # must not affect that decision.
+            next_cursor = str(page + 1) if raw_items else None
             self.last_feed_mode = "v2"
-            return items, next_cursor, bool(items), "v2"
+            return items, next_cursor, bool(raw_items), "v2"
         except SunoAPIError as exc:
             v2_error = str(exc)
 
         try:
             result = self.json_request("/api/feed/?" + urllib.parse.urlencode(params), retries=2)
-            items = self._local_filter(extract_items(result), liked=liked, trashed=trashed)
+            raw_items = extract_items(result)
+            items = self._local_filter(raw_items, liked=liked, trashed=trashed)
             page = int(params["page"])
-            next_cursor = str(page + 1) if items else None
+            next_cursor = str(page + 1) if raw_items else None
             self.last_feed_mode = "legacy"
-            return items, next_cursor, bool(items), "legacy"
+            return items, next_cursor, bool(raw_items), "legacy"
         except SunoAPIError as exc:
             raise SunoAPIError(
                 "Suno nije prihvatio nijedan način čitanja glavne biblioteke. "
@@ -462,9 +471,20 @@ class SunoClient:
                             break
                 if projects:
                     break
-            has_more = False
+            has_more_seen = None
             for container in containers:
-                has_more = bool(container.get("has_more", has_more))
+                if "has_more" in container:
+                    has_more_seen = bool(container["has_more"])
+            # Unlike the cursor-based v3 feed, these page-number endpoints
+            # don't reliably include a has_more field at all (three
+            # different endpoint names are tried specifically because the
+            # response shape is uncertain) -- treating a missing field as
+            # "False" silently stopped every Workspaces/Projects sync after
+            # page 1, regardless of how many actually exist. When the field
+            # is truly absent, infer the same way the v2/legacy feed
+            # fallback already does: keep going as long as this page
+            # returned anything, stop only on a genuinely empty page.
+            has_more = has_more_seen if has_more_seen is not None else bool(projects)
             if projects:
                 return projects, has_more
         if errors:

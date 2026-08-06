@@ -457,7 +457,20 @@ def process_audio(
     output_duration = source_clip_duration
     if not stream_copy:
         if options.get("remove_silence"):
-            filters.append("silenceremove=start_periods=1:start_duration=0.08:start_threshold=-50dB:stop_periods=-1:stop_duration=0.12:stop_threshold=-50dB")
+            # Was stop_periods=-1 in a single forward pass, which strips
+            # EVERY silence gap >=0.12s anywhere in the track, not just the
+            # tail -- contradicting the UI label "Ukloni tišinu sa početka i
+            # kraja" (start and end only) by also cutting intentional pauses
+            # in the middle of a song. The standard ffmpeg idiom for
+            # start+end-only silence removal: strip leading silence, reverse,
+            # strip what's now leading silence (= the original trailing
+            # silence), reverse back.
+            filters.append(
+                "silenceremove=start_periods=1:start_duration=0.08:start_threshold=-50dB,"
+                "areverse,"
+                "silenceremove=start_periods=1:start_duration=0.08:start_threshold=-50dB,"
+                "areverse"
+            )
         volume_db = max(-30.0, min(30.0, _safe_float(options.get("volume_db"), 0.0)))
         if abs(volume_db) >= 0.05:
             filters.append(f"volume={volume_db:g}dB")
@@ -472,9 +485,16 @@ def process_audio(
         fade_out = max(0.0, min(30.0, _safe_float(options.get("fade_out"), 0.0)))
         if fade_in > 0:
             filters.append(f"afade=t=in:st=0:d={min(fade_in, output_duration):g}")
-        if fade_out > 0 and output_duration > 0:
-            fade_start = max(0.0, output_duration - min(fade_out, output_duration))
-            filters.append(f"afade=t=out:st={fade_start:g}:d={min(fade_out, output_duration):g}")
+        if fade_out > 0:
+            # Was computed from `output_duration`, an ESTIMATE that only
+            # accounts for the speed change -- it doesn't know how much
+            # shorter remove_silence's dynamic silence stripping actually
+            # makes the real output, so a wrong (too-late) fade_start could
+            # land past the real end of the stream and apply no audible
+            # fade at all. Fading the reversed stream's start is exact
+            # regardless of the final duration: "start of the reversed
+            # audio" IS "the real end", whatever that turns out to be.
+            filters.append(f"areverse,afade=t=in:st=0:d={fade_out:g},areverse")
 
     args = [ffmpeg, "-hide_banner", "-nostdin", "-y", "-loglevel", "error", "-ss", f"{start:.3f}"]
     args += _input_args(input_source)
@@ -564,17 +584,45 @@ def waveform_peaks(
         progress("Pravim brzi talasni prikaz...", 10)
     proc = subprocess.Popen(args, **kwargs)
     chunks: list[bytes] = []
+    stderr_chunks: list[bytes] = []
+
+    # stderr has a small OS pipe buffer; draining stdout to completion
+    # first and only reading stderr afterward (the old code) deadlocks if
+    # ffmpeg writes enough to stderr while stdout is still open -- ffmpeg
+    # blocks writing to the full stderr pipe while this thread blocks
+    # reading stdout, and neither side ever proceeds. Common trigger: a
+    # song streamed straight from Suno's CDN (no local file downloaded
+    # yet) hits a network hiccup and logs repeated errors. _run_ffmpeg_progress
+    # already uses a dedicated reader thread for exactly this reason.
+    def read_stderr() -> None:
+        if proc.stderr is None:
+            return
+        for chunk in iter(lambda: proc.stderr.read(4096), b""):
+            stderr_chunks.append(chunk)
+
+    stderr_thread = threading.Thread(target=read_stderr, daemon=True)
+    stderr_thread.start()
+    started = time.monotonic()
     assert proc.stdout is not None
-    while True:
-        if cancel_check and cancel_check():
-            proc.kill()
-            raise AudioCancelled("Učitavanje talasnog prikaza je zaustavljeno.")
-        block = proc.stdout.read(65536)
-        if not block:
-            break
-        chunks.append(block)
-    stderr = (proc.stderr.read() if proc.stderr else b"").decode("utf-8", errors="replace")
-    code = proc.wait(timeout=20)
+    try:
+        while True:
+            if cancel_check and cancel_check():
+                proc.kill()
+                raise AudioCancelled("Učitavanje talasnog prikaza je zaustavljeno.")
+            if time.monotonic() - started > 25:
+                proc.kill()
+                raise RuntimeError("Pravljenje talasnog prikaza je prekoračilo dozvoljeno vreme.")
+            block = proc.stdout.read(65536)
+            if not block:
+                break
+            chunks.append(block)
+        code = proc.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        raise RuntimeError("Pravljenje talasnog prikaza je prekoračilo dozvoljeno vreme.")
+    finally:
+        stderr_thread.join(timeout=5)
+    stderr = b"".join(stderr_chunks).decode("utf-8", errors="replace")
     raw = b"".join(chunks)
     if code != 0 or len(raw) < 4:
         raise RuntimeError((stderr or "Talasni prikaz nije mogao da se napravi.").strip())

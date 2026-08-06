@@ -18,7 +18,16 @@ VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 
 class YouTubeAPIError(RuntimeError):
-    pass
+    def __init__(self, message: str, status_code: int = 0, reason: str = "") -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.reason = reason
+
+    @property
+    def is_quota_exceeded(self) -> bool:
+        return self.status_code == 403 and (
+            "quota" in self.reason.lower() or "quota" in str(self).lower()
+        )
 
 
 def _request_json(url: str, timeout: int = 30, access_token: str = "") -> dict[str, Any]:
@@ -35,12 +44,17 @@ def _request_json(url: str, timeout: int = 30, access_token: str = "") -> dict[s
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
         message = f"YouTube API greška HTTP {exc.code}."
+        reason = ""
         try:
             payload = json.loads(body)
-            message = payload.get("error", {}).get("message") or message
+            error_obj = payload.get("error", {}) if isinstance(payload, dict) else {}
+            message = error_obj.get("message") or message
+            errors_list = error_obj.get("errors") or []
+            if errors_list and isinstance(errors_list[0], dict):
+                reason = str(errors_list[0].get("reason") or "")
         except Exception:
             pass
-        raise YouTubeAPIError(message) from exc
+        raise YouTubeAPIError(message, status_code=exc.code, reason=reason) from exc
     except urllib.error.URLError as exc:
         raise YouTubeAPIError(f"Ne mogu da se povežem sa YouTube servisom: {exc.reason}") from exc
     try:
@@ -378,7 +392,14 @@ def build_search_queries(song: dict[str, Any], max_queries: int = 3) -> list[str
 
 
 def normalize_title(value: str) -> str:
-    raw = unicodedata.normalize("NFKD", str(value or ""))
+    # đ/Đ (Serbian "d with stroke") has no Unicode NFKD decomposition, unlike
+    # č/ć/š/ž (which decompose into base letter + combining mark and get
+    # stripped correctly below) -- left alone, it survives the combining-mark
+    # strip intact and then gets silently deleted by the final [^a-z0-9]+
+    # cleanup, splitting words like "Rođendan" into garbage tokens ("ro",
+    # "endan"). Map it to "d" first, same as _norm_title() in v3_features.py.
+    raw = str(value or "").translate(str.maketrans("đĐ", "dD"))
+    raw = unicodedata.normalize("NFKD", raw)
     raw = "".join(ch for ch in raw if not unicodedata.combining(ch)).lower()
     raw = re.sub(r"\([^)]*(remaster|official|audio|video|lyrics|lyric)[^)]*\)", " ", raw)
     raw = re.sub(r"\[[^]]*(remaster|official|audio|video|lyrics|lyric)[^]]*\]", " ", raw)

@@ -80,7 +80,7 @@ from v3_features import (
 import song_finder
 
 
-APP_VERSION = "3.3.8"
+APP_VERSION = "3.3.9"
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "app" / "web"
 USER_DATA_ROOT = Path(os.environ.get("SUNO_STUDIO_USER_DIR") or ROOT).expanduser().resolve()
@@ -1018,6 +1018,7 @@ def scan_global_youtube(task: TaskState, options: dict[str, Any]) -> None:
             task.log("Google/YouTube API nije povezan. Koristim ugrađeni yt-dlp + Deno režim pretrage.", "warning")
             ensure_ytdlp()
             ensure_deno()
+        quota_exceeded = False
         for index, song in enumerate(songs, 1):
             if task.cancel_event.is_set():
                 break
@@ -1035,7 +1036,7 @@ def scan_global_youtube(task: TaskState, options: dict[str, Any]) -> None:
                     break
                 videos: list[dict[str, Any]] = []
                 used_api = False
-                if (api_key or access_token) and api_calls < api_call_budget:
+                if (api_key or access_token) and api_calls < api_call_budget and not quota_exceeded:
                     pages_for_query = max_pages if q_index == 1 else 1
                     try:
                         videos = search_videos(
@@ -1044,6 +1045,21 @@ def scan_global_youtube(task: TaskState, options: dict[str, Any]) -> None:
                         )
                         api_calls += pages_for_query
                         used_api = True
+                    except YouTubeAPIError as exc:
+                        song_had_error = True
+                        # api_calls was only ever incremented on SUCCESS, so
+                        # once the daily quota was exhausted the api_calls <
+                        # api_call_budget gate above stayed permissively open
+                        # forever -- every remaining query for every
+                        # remaining song kept re-attempting the same
+                        # guaranteed-to-fail API call before falling back to
+                        # yt-dlp, instead of switching modes once and saying
+                        # so clearly.
+                        if exc.is_quota_exceeded and not quota_exceeded:
+                            quota_exceeded = True
+                            task.log("YouTube API dnevna kvota je potrošena. Prelazim na yt-dlp rezervni režim za ostatak pretrage.", "warning")
+                        elif not quota_exceeded:
+                            task.log(f"YouTube API nije uspeo za upit {query!r}: {exc}. Pokušavam yt-dlp rezervni režim.", "warning")
                     except Exception as exc:
                         song_had_error = True
                         task.log(f"YouTube API nije uspeo za upit {query!r}: {exc}. Pokušavam yt-dlp rezervni režim.", "warning")
@@ -2312,7 +2328,7 @@ def _download_one(task: TaskState, client: SunoClient, song_id: str, options: di
     lyrics = row.get("lyrics") or metadata.get("lyrics") or metadata.get("text") or metadata.get("prompt") or ""
     prompt = row.get("prompt") or metadata.get("prompt") or ""
     tags = row.get("tags") or metadata.get("tags") or ""
-    artist = row.get("display_name") or detail.get("display_name") or "Nedostaješ PUNOO"
+    artist = row.get("display_name") or detail.get("display_name") or "Nepoznat izvođač"
     created_at = row.get("created_at") or detail.get("created_at") or ""
     month = created_at[:7] if len(created_at) >= 7 and bool(options.get("folders_by_month", True)) else ""
     target_root = _ensure_writable_directory(Path(str(options.get("target_dir") or get_download_dir())), "odredišni folder")
@@ -3609,7 +3625,7 @@ def _process_audio_one(
             cover_bytes = Path(cover_raw).read_bytes()
         embed_mp3_metadata(
             output,
-            title=str(song.get("title") or ""), artist=str(song.get("display_name") or "Nedostaješ PUNOO"),
+            title=str(song.get("title") or ""), artist=str(song.get("display_name") or "Nepoznat izvođač"),
             album=str(song.get("album") or "Suno pesme"), genre=str(song.get("genre") or song.get("tags") or ""),
             year=str(song.get("year") or str(song.get("created_at") or "")[:4]), lyrics=str(song.get("lyrics") or ""),
             comment=str(song.get("prompt") or song.get("notes") or ""), cover_bytes=cover_bytes,
@@ -3716,7 +3732,7 @@ def write_song_tags(song_id: str, backup: bool = True) -> dict[str, Any]:
     embed_mp3_metadata(
         audio,
         title=str(song.get("title") or ""),
-        artist=str(song.get("display_name") or "Nedostaješ PUNOO"),
+        artist=str(song.get("display_name") or "Nepoznat izvođač"),
         album=str(song.get("album") or "Suno pesme"),
         genre=str(song.get("genre") or song.get("tags") or ""),
         year=str(song.get("year") or str(song.get("created_at") or "")[:4]),
@@ -4432,7 +4448,7 @@ def v3_youtube_upload_task(task: TaskState, options: dict[str, Any]) -> None:
     if not song: raise RuntimeError("Pesma nije pronađena.")
     video = Path(str(options.get("video_path") or song.get("local_video") or ""))
     if not video.exists(): raise RuntimeError("Izaberi gotov MP4 video za upload.")
-    metadata = youtube_metadata(song, str(options.get("channel_profile") or "Nedostaješ PUNOO PESME"))
+    metadata = youtube_metadata(song, str(options.get("channel_profile") or "Nepoznat kanal"))
     for key in ("title","description","tags","category_id","privacy_status","made_for_kids","thumbnail_path","playlist_id","publish_at"):
         if key in options: metadata[key] = options[key]
     def progress(name: str, done: int, total: int) -> None:
@@ -4725,7 +4741,15 @@ class Handler(BaseHTTPRequestHandler):
             "/api/health", "/api/v3/security/status", "/api/v3/security/unlock",
             "/api/shutdown", "/oauth/youtube/callback",
         }
-        if not path.startswith("/api/") or path in public:
+        # /media is the real song-audio/cover-art streaming route (the
+        # player itself uses it), not a static UI asset -- it was falling
+        # through this check unprotected because it doesn't start with
+        # "/api/", meaning the PIN lock screen could be showing while any
+        # local page/script could still fetch and play private song audio
+        # straight through it. Only index.html/app.js/style.css etc need to
+        # stay exempt so the PIN entry screen itself can load.
+        protected = path.startswith("/api/") or path == "/media"
+        if not protected or path in public:
             return True
         if SECURITY.is_locked():
             self._send_json({"ok": False, "locked": True, "message": "Program je zaključan. Unesi PIN."}, 423)
@@ -5274,7 +5298,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not song: raise RuntimeError("Pesma nije pronađena.")
                 result=create_youtube_package(
                     song, EXPORT_DIR,
-                    channel=str(body.get("channel_profile") or "Nedostaješ PUNOO PESME"),
+                    channel=str(body.get("channel_profile") or "Nepoznat kanal"),
                     video_path=str(body.get("video_path") or song.get("local_video") or ""),
                     thumbnail_path=str(body.get("thumbnail_path") or song.get("local_cover") or ""),
                     extra_metadata={k: body.get(k) for k in ("privacy_status", "playlist_id", "publish_at", "made_for_kids") if k in body},
@@ -6066,13 +6090,29 @@ def main() -> None:
     SCHEDULER_THREAD.start()
     if os.environ.get("SUNO_AUTO_OPEN", "0") == "1":
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    def _mark_clean_stop() -> None:
+        # The watchdog only knows a shutdown was intentional (not a crash to
+        # auto-restart from) if this marker file exists -- previously only
+        # the in-app "Zatvori lokalni program" button wrote it, so closing
+        # the program any other way (Ctrl+C in a console, or the process
+        # exiting/being interrupted without going through that button) was
+        # indistinguishable from a real crash, and the watchdog would
+        # silently relaunch the server the user just closed.
+        if os.environ.get("SUNO_WATCHDOG") == "1":
+            try:
+                WATCHDOG_STOP_FILE.write_text(now_iso(), encoding="utf-8")
+            except Exception as exc:
+                runtime_log(f"Watchdog stop marker: {exc}", "warning")
+
     try:
         server.serve_forever(poll_interval=0.25)
     except KeyboardInterrupt:
-        pass
+        _mark_clean_stop()
     except Exception as exc:
         runtime_log(traceback.format_exc(), "error")
         raise
+    else:
+        _mark_clean_stop()
     finally:
         SESSION_KEEPALIVE_STOP.set()
         SCHEDULER_STOP.set()

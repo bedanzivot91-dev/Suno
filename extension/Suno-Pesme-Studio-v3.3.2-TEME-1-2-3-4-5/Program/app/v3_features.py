@@ -188,7 +188,18 @@ def library_integrity_scan(db: Any, *, repair_hashes: bool = True, probe_audio_f
 def _norm_title(value: str) -> str:
     value = value.casefold()
     value = value.translate(str.maketrans("čćžšđ", "cczsd"))
-    value = re.sub(r"\b(official|audio|video|lyrics?|lyric|suno|remix|version|verzija|nedostajes|punoo)\b", " ", value)
+    # Was missing exactly the words that mark "a different version of the
+    # SAME song" -- remaster/radio edit/acoustic/live/cover/instrumental/etc.
+    # A single unstripped suffix word (very common on real Suno/YouTube
+    # titles, e.g. "Moja pesma (Remastered)") drops the word-overlap score
+    # below the 0.75 threshold below, so this feature was missing exactly
+    # the pairs it exists to find.
+    value = re.sub(
+        r"\b(official|audio|video|lyrics?|lyric|suno|remix|version|verzija|nedostajes|punoo|"
+        r"remaster(ed)?|radio ?edit|acoustic|akustič\w*|live|uzivo|uživo|cover|obrada|"
+        r"instrumental|demo|extended|produzena|produžena|deluxe|sped ?up|slowed|nightcore|"
+        r"mono|stereo|feat|ft|explicit|clean)\b", " ", value,
+    )
     return re.sub(r"[^a-z0-9]+", " ", value).strip()
 
 
