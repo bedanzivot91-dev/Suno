@@ -1,3 +1,7 @@
+> **NAPOMENA (dodato uz v3.3.10):** Ovaj izveštaj je nastao u originalnom build-u (v3.3.2), PRE svih funkcionalnih popravki opisanih u istoriji commit-ova i na stranici GitHub Releases (v3.3.3–v3.3.10). Sadržaj ispod je zamrznuta slika tog trenutka i ne opisuje trenutno stanje koda -- za tačan i ažuran spisak šta je stvarno popravljeno, vidi https://github.com/bedanzivot91-dev/Suno/releases.
+
+---
+
 # Suno Pesme Studio v3.3.2 — svih 5 kompletnih tema
 
 ## Ugrađene teme
