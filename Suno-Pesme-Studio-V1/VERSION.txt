@@ -1,0 +1,4 @@
+Suno Pesme Studio
+Version: 1
+App version: 1.0.0
+Branch: suno-pesme-studio-v1
