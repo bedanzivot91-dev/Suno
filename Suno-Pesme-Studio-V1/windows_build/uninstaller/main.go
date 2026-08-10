@@ -23,8 +23,9 @@ func box(text string, flags uintptr) uintptr {
 func copyFile(src,dst string,mode os.FileMode)error{in,e:=os.Open(src);if e!=nil{return e};defer in.Close();if e=os.MkdirAll(filepath.Dir(dst),0755);e!=nil{return e};out,e:=os.OpenFile(dst,os.O_CREATE|os.O_TRUNC|os.O_WRONLY,mode);if e!=nil{return e};_,ce:=io.Copy(out,in);x:=out.Close();if ce!=nil{return ce};return x}
 func copyDir(src,dst string)error{return filepath.Walk(src,func(path string,info os.FileInfo,e error)error{if e!=nil{return e};rel,e:=filepath.Rel(src,path);if e!=nil{return e};to:=filepath.Join(dst,rel);if info.IsDir(){return os.MkdirAll(to,info.Mode())};return copyFile(path,to,info.Mode())})}
 func scheduleDelete(target string) error {
-    esc:=strings.ReplaceAll(target,"%","%%")
-    cmd:=exec.Command("cmd.exe","/D","/S","/C",fmt.Sprintf(`ping 127.0.0.1 -n 3 > nul & rmdir /S /Q "%s"`,esc))
+    esc:=strings.ReplaceAll(target,"'","''")
+    script:=fmt.Sprintf(`Start-Sleep -Milliseconds 1200; Remove-Item -LiteralPath '%s' -Recurse -Force -ErrorAction SilentlyContinue; if (Test-Path -LiteralPath '%s') { Start-Sleep -Seconds 2; Remove-Item -LiteralPath '%s' -Recurse -Force -ErrorAction SilentlyContinue }`,esc,esc,esc)
+    cmd:=exec.Command("powershell.exe","-NoProfile","-NonInteractive","-ExecutionPolicy","Bypass","-WindowStyle","Hidden","-Command",script)
     cmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true}
     return cmd.Start()
 }
