@@ -50,8 +50,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = 'suno-pesme-studio-v1-latest'
+          $ErrorActionPreference = 'Continue'
           gh release view $tag *> $null
-          if ($LASTEXITCODE -ne 0) {
+          $releaseExists = ($LASTEXITCODE -eq 0)
+          $ErrorActionPreference = 'Stop'
+          if (-not $releaseExists) {
             gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Automatski napravljen kompletan Windows paket iz main grane.' --target $env:GITHUB_SHA
+            if ($LASTEXITCODE -ne 0) { throw 'GitHub Release nije mogao da se napravi.' }
           }
           gh release upload $tag ./dist/Suno-Pesme-Studio-V1-Windows.zip ./dist/Suno-Pesme-Studio-V1-Windows.sha256 --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Windows ZIP nije mogao da se postavi na GitHub Release.' }
