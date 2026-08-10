@@ -50,11 +50,28 @@ jobs:
             } catch {
               Write-Host "BUILD ATTEMPT $attempt FAILED: $($_.Exception.Message)" -ForegroundColor Yellow
             }
-            if ($attempt -lt 4) {
-              Start-Sleep -Seconds (10 * $attempt)
-            }
+            if ($attempt -lt 4) { Start-Sleep -Seconds (10 * $attempt) }
           }
           if (-not $ok) { throw 'Windows package build failed after 4 attempts.' }
+
+      - name: Force canonical Panako installer into final ZIP
+        shell: powershell
+        run: |
+          $zip = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip
+          $canonical = Resolve-Path ./Suno-Pesme-Studio-V1/Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1
+          $patchDir = "$PWD/dist/panako-patched-package"
+          Remove-Item $patchDir -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive $zip -DestinationPath $patchDir -Force
+          $dest = Join-Path $patchDir 'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1'
+          Copy-Item $canonical $dest -Force
+          $text = Get-Content $dest -Raw
+          if ($text -notmatch 'e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211') { throw 'Final ZIP nema pinned Panako commit.' }
+          if ($text -notmatch 'gradle-7\.3\.3-bin\.zip') { throw 'Final ZIP nema Gradle 7.3.3 Panako popravku.' }
+          Remove-Item $zip -Force
+          Compress-Archive (Join-Path $patchDir '*') $zip -CompressionLevel Optimal
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content ./dist/Suno-Pesme-Studio-V1-Windows.sha256 "$hash  Suno-Pesme-Studio-V1-Windows.zip" -Encoding Ascii
+          Write-Host "CANONICAL PANAKO SCRIPT VERIFIED IN FINAL ZIP: $hash"
 
       - name: Verify output and checksum
         shell: powershell
@@ -88,6 +105,8 @@ jobs:
           )) {
             if (!(Test-Path (Join-Path $dst $p))) { throw "Nedostaje u finalnom ZIP-u: $p" }
           }
+          $panakoText = Get-Content (Join-Path $dst 'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1') -Raw
+          if ($panakoText -notmatch 'gradle-7\.3\.3-bin\.zip') { throw 'Raspakovani finalni ZIP nema Gradle 7.3.3 Panako fix.' }
 
       - name: Install final ZIP with actual installer EXE
         shell: powershell
