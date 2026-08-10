@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: suno-pesme-studio-v1-release
+  group: suno-pesme-studio-v1-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -40,14 +40,93 @@ jobs:
           Set-ExecutionPolicy Bypass -Scope Process -Force
           ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist"
 
-      - name: Verify output
+      - name: Verify output and checksum
         shell: powershell
         run: |
-          if (!(Test-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip)) { throw 'Windows ZIP nije napravljen' }
-          if (!(Test-Path ./dist/Suno-Pesme-Studio-V1-Windows.sha256)) { throw 'SHA256 fajl nije napravljen' }
-          Get-Content ./dist/Suno-Pesme-Studio-V1-Windows.sha256
+          $zip = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip
+          $shaFile = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.sha256
+          $expected = ((Get-Content $shaFile -Raw).Trim() -split '\s+')[0].ToLowerInvariant()
+          $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "ZIP SHA256 mismatch: $actual != $expected" }
+          if ((Get-Item $zip).Length -lt 120MB) { throw 'Windows ZIP je premali i nepotpun.' }
+          Write-Host "ZIP VERIFIED: $actual"
 
-      - name: Publish Windows ZIP to GitHub Release
+      - name: Extract final ZIP exactly as user downloads it
+        shell: powershell
+        run: |
+          $dst = "$PWD/dist/e2e-package"
+          Remove-Item $dst -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive ./dist/Suno-Pesme-Studio-V1-Windows.zip -DestinationPath $dst -Force
+          foreach ($p in @(
+            'INSTALIRAJ_PROGRAM.exe',
+            'DEINSTALIRAJ_PROGRAM.exe',
+            'Program/Suno Pesme Studio.exe',
+            'Program/python/python.exe',
+            'Program/app/server.py',
+            'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
+            'Program/tools/ffmpeg/bin/ffmpeg.exe',
+            'Program/tools/ffmpeg/bin/ffprobe.exe',
+            'Program/tools/yt-dlp/yt-dlp.exe',
+            'Program/tools/deno/deno.exe',
+            'Program/tools/fpcalc/fpcalc.exe'
+          )) {
+            if (!(Test-Path (Join-Path $dst $p))) { throw "Nedostaje u finalnom ZIP-u: $p" }
+          }
+
+      - name: Install final ZIP with actual installer EXE
+        shell: powershell
+        env:
+          SPS_INSTALL_TEST_MODE: '1'
+        run: |
+          $pkg = Resolve-Path ./dist/e2e-package
+          Push-Location $pkg
+          try {
+            & ./INSTALIRAJ_PROGRAM.exe 2>&1 | Tee-Object -Variable installOut | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw "Installer exit code: $LASTEXITCODE" }
+            if (($installOut -join "`n") -notmatch 'SPS_INSTALL_TEST_OK') { throw 'Installer nije vratio SPS_INSTALL_TEST_OK.' }
+          } finally { Pop-Location }
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          foreach ($p in @(
+            'Suno Pesme Studio.exe',
+            'python/python.exe',
+            'app/bootstrap.py',
+            'app/server.py',
+            'plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
+            'tools/ffmpeg/bin/ffmpeg.exe',
+            'tools/yt-dlp/yt-dlp.exe',
+            'tools/deno/deno.exe',
+            'tools/fpcalc/fpcalc.exe',
+            'Deinstaliraj Suno Pesme Studio.exe'
+          )) {
+            if (!(Test-Path (Join-Path $installed $p))) { throw "Instalacija nije postavila: $p" }
+          }
+
+      - name: Launch installed program self-test
+        shell: powershell
+        env:
+          SPS_LAUNCHER_SELF_TEST: '1'
+        run: |
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          Push-Location $installed
+          try {
+            & './Suno Pesme Studio.exe' 2>&1 | Tee-Object -Variable launchOut | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw "Launcher exit code: $LASTEXITCODE" }
+            if (($launchOut -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK') { throw 'Launcher nije prošao embedded Python import test.' }
+          } finally { Pop-Location }
+
+      - name: Uninstall installed program with actual uninstaller EXE
+        shell: powershell
+        env:
+          SPS_UNINSTALL_TEST_MODE: '1'
+        run: |
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          $un = Join-Path $installed 'Deinstaliraj Suno Pesme Studio.exe'
+          & $un 2>&1 | Tee-Object -Variable uninstallOut | Out-Host
+          if ($LASTEXITCODE -ne 0) { throw "Uninstaller exit code: $LASTEXITCODE" }
+          if (($uninstallOut -join "`n") -notmatch 'SPS_UNINSTALL_TEST_OK') { throw 'Uninstaller nije vratio SPS_UNINSTALL_TEST_OK.' }
+          if (Test-Path $installed) { throw 'Program folder postoji i posle deinstalacije.' }
+
+      - name: Publish verified Windows ZIP to GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: powershell
         env:
@@ -59,7 +138,7 @@ jobs:
           $releaseExists = ($LASTEXITCODE -eq 0)
           $ErrorActionPreference = 'Stop'
           if (-not $releaseExists) {
-            gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Automatski napravljen kompletan Windows paket iz main grane.' --target $env:GITHUB_SHA
+            gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Automatski napravljen Windows paket koji je prošao build, ZIP integritet, instalaciju, launcher self-test i deinstalaciju na GitHub Windows runneru.' --target $env:GITHUB_SHA
             if ($LASTEXITCODE -ne 0) { throw 'GitHub Release nije mogao da se napravi.' }
           }
           gh release upload $tag ./dist/Suno-Pesme-Studio-V1-Windows.zip ./dist/Suno-Pesme-Studio-V1-Windows.sha256 --clobber
