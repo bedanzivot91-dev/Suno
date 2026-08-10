@@ -45,4 +45,10 @@ $readableCss = Get-Content (Join-Path $web 'task5-readable-ui.css') -Raw
 foreach($cssNeedle in @('html{font-size:17px}','body{font-size:17px','button,input,select,textarea','min-height:42px','font-size:16px')) {
   if ($readableCss -notmatch [regex]::Escape($cssNeedle)) { throw "Task5: readability pravilo nedostaje: $cssNeedle" }
 }
-Write-Host 'TASK3_TASK4_TASK5_WEB_PATCH_OK'
+$py = Join-Path $PackageRoot 'Program/python/python.exe'
+$uiAudit = Join-Path $repoRoot 'Suno-Pesme-Studio-V1/tests/UI_BUTTON_AUDIT.py'
+if (!(Test-Path $py)) { throw 'Task10: embedded Python nije pronađen za UI audit.' }
+if (!(Test-Path $uiAudit)) { throw 'Task10: UI_BUTTON_AUDIT.py nije pronađen.' }
+& $py $uiAudit $web
+if ($LASTEXITCODE -ne 0) { throw "Task10: UI button audit nije prošao: $LASTEXITCODE" }
+Write-Host 'TASK3_TASK4_TASK5_TASK10_WEB_PATCH_OK'
