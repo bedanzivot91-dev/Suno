@@ -54,6 +54,26 @@ jobs:
           }
           if (-not $ok) { throw 'Windows package build failed after 4 attempts.' }
 
+      - name: Apply Task 3 account command center to final ZIP
+        shell: powershell
+        run: |
+          $zip = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip
+          $patchDir = "$PWD/dist/task3-patched-package"
+          Remove-Item $patchDir -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive $zip -DestinationPath $patchDir -Force
+          ./Suno-Pesme-Studio-V1/github_build/APPLY_TASK3_DASHBOARD.ps1 -PackageRoot $patchDir
+          if ($LASTEXITCODE -ne 0) { throw "Task3 dashboard patch failed: $LASTEXITCODE" }
+          $index = Join-Path $patchDir 'Program/app/web/index.html'
+          $html = Get-Content $index -Raw
+          if ($html -notmatch 'task3-dashboard\.js' -or $html -notmatch 'task3-dashboard\.css') { throw 'Task3 dashboard nije referenciran iz finalnog index.html.' }
+          if (!(Test-Path (Join-Path $patchDir 'Program/app/web/task3-dashboard.js'))) { throw 'Task3 JS nedostaje.' }
+          if (!(Test-Path (Join-Path $patchDir 'Program/app/web/task3-dashboard.css'))) { throw 'Task3 CSS nedostaje.' }
+          Remove-Item $zip -Force
+          Compress-Archive (Join-Path $patchDir '*') $zip -CompressionLevel Optimal
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content ./dist/Suno-Pesme-Studio-V1-Windows.sha256 "$hash  Suno-Pesme-Studio-V1-Windows.zip" -Encoding Ascii
+          Write-Host "TASK3_FINAL_ZIP_OK: $hash"
+
       - name: Force canonical Panako installer into final ZIP
         shell: powershell
         run: |
@@ -96,6 +116,9 @@ jobs:
             'Program/Suno Pesme Studio.exe',
             'Program/python/python.exe',
             'Program/app/server.py',
+            'Program/app/web/index.html',
+            'Program/app/web/task3-dashboard.js',
+            'Program/app/web/task3-dashboard.css',
             'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
             'Program/tools/ffmpeg/bin/ffmpeg.exe',
             'Program/tools/ffmpeg/bin/ffprobe.exe',
@@ -107,6 +130,13 @@ jobs:
           }
           $panakoText = Get-Content (Join-Path $dst 'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1') -Raw
           if ($panakoText -notmatch 'gradle-7\.3\.3-bin\.zip') { throw 'Raspakovani finalni ZIP nema Gradle 7.3.3 Panako fix.' }
+          $task3Html = Get-Content (Join-Path $dst 'Program/app/web/index.html') -Raw
+          $task3Js = Get-Content (Join-Path $dst 'Program/app/web/task3-dashboard.js') -Raw
+          if ($task3Html -notmatch 'task3-dashboard\.js' -or $task3Html -notmatch 'task3-dashboard\.css') { throw 'Finalni index.html ne učitava Task3 dashboard.' }
+          foreach($needle in @('/api/status','/api/connect/start','/api/connect/check','/api/youtube/oauth/status','/api/youtube/oauth/start','/api/youtube/oauth/refresh-channels')) {
+            if ($task3Js -notmatch [regex]::Escape($needle)) { throw "Task3 dashboard nema stvarnu API vezu: $needle" }
+          }
+          Write-Host 'TASK3_ACCOUNT_COMMAND_CENTER_STATIC_OK'
 
       - name: Install final ZIP with actual installer EXE
         shell: powershell
@@ -131,6 +161,8 @@ jobs:
             'python/python.exe',
             'app/bootstrap.py',
             'app/server.py',
+            'app/web/task3-dashboard.js',
+            'app/web/task3-dashboard.css',
             'plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
             'tools/ffmpeg/bin/ffmpeg.exe',
             'tools/yt-dlp/yt-dlp.exe',
