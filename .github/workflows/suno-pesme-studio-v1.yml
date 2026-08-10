@@ -28,11 +28,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify build tools
+      - name: Verify build tools and Task 3 source syntax
         shell: powershell
         run: |
           go version
           tar --version
+          node --check ./Suno-Pesme-Studio-V1/Program/app/web/task3-dashboard.js
+          [scriptblock]::Create((Get-Content ./Suno-Pesme-Studio-V1/github_build/APPLY_TASK3_DASHBOARD.ps1 -Raw)) | Out-Null
+          Write-Host 'TASK3_SOURCE_SYNTAX_OK'
 
       - name: Build complete Windows package
         shell: powershell
@@ -62,7 +65,7 @@ jobs:
           Remove-Item $patchDir -Recurse -Force -ErrorAction SilentlyContinue
           Expand-Archive $zip -DestinationPath $patchDir -Force
           ./Suno-Pesme-Studio-V1/github_build/APPLY_TASK3_DASHBOARD.ps1 -PackageRoot $patchDir
-          if ($LASTEXITCODE -ne 0) { throw "Task3 dashboard patch failed: $LASTEXITCODE" }
+          if ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Task3 dashboard patch failed: $LASTEXITCODE" }
           $index = Join-Path $patchDir 'Program/app/web/index.html'
           $html = Get-Content $index -Raw
           if ($html -notmatch 'task3-dashboard\.js' -or $html -notmatch 'task3-dashboard\.css') { throw 'Task3 dashboard nije referenciran iz finalnog index.html.' }
