@@ -1,0 +1,71 @@
+name: Suno V1 Task 2 Preserve Modules
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Suno-Pesme-Studio-V1/**'
+      - '.github/workflows/suno-v1-task2-modules.yml'
+  workflow_dispatch:
+
+jobs:
+  verify-required-modules:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Windows package used by the application
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist-task2"
+          if ($LASTEXITCODE -ne 0) { throw "BUILD_COMPLETE failed: $LASTEXITCODE" }
+
+      - name: Verify every locked first-party module is present
+        shell: powershell
+        run: |
+          $root = Resolve-Path './dist-task2/work'
+          $required = Get-Content './Suno-Pesme-Studio-V1/TASK2_REQUIRED_MODULES.txt' | Where-Object { $_.Trim() }
+          if ($required.Count -lt 25) { throw "Required module manifest is unexpectedly small: $($required.Count)" }
+          foreach ($rel in $required) {
+            $p = Join-Path $root $rel
+            if (!(Test-Path $p)) { throw "REQUIRED MODULE MISSING: $rel" }
+            if ((Get-Item $p).Length -le 0) { throw "REQUIRED MODULE EMPTY: $rel" }
+            Write-Host "PRESENT: $rel"
+          }
+          Write-Host "TASK2_REQUIRED_FILES_OK=$($required.Count)"
+
+      - name: Import every required Python app module
+        shell: powershell
+        run: |
+          $program = Resolve-Path './dist-task2/work/Program'
+          $py = Join-Path $program 'python/python.exe'
+          $app = Join-Path $program 'app'
+          $required = Get-Content './Suno-Pesme-Studio-V1/TASK2_REQUIRED_MODULES.txt' | Where-Object { $_ -match '^Program/app/.+\.py$' }
+          foreach ($rel in $required) {
+            $name = [IO.Path]::GetFileNameWithoutExtension($rel)
+            $code = "import sys; sys.path.insert(0, r'$app'); __import__('$name'); print('IMPORT_OK:$name')"
+            & $py -c $code
+            if ($LASTEXITCODE -ne 0) { throw "IMPORT FAILED: $name" }
+          }
+          Write-Host "TASK2_REQUIRED_IMPORTS_OK=$($required.Count)"
+
+      - name: Verify web UI and plugin assets remain packaged
+        shell: powershell
+        run: |
+          $root = Resolve-Path './dist-task2/work'
+          foreach ($rel in @(
+            'Program/app/web/index.html',
+            'Program/app/web/app.js',
+            'Program/app/web/style.css',
+            'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
+            'Program/plugins/stems_worker.py',
+            'Program/plugins/transcribe_worker.py'
+          )) {
+            $p = Join-Path $root $rel
+            if (!(Test-Path $p)) { throw "ASSET MISSING: $rel" }
+            if ((Get-Item $p).Length -lt 100) { throw "ASSET TOO SMALL: $rel" }
+          }
+          Write-Host 'TASK_2_PRESERVE_MODULES_OK'
