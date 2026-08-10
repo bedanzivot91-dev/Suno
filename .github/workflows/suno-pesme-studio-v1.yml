@@ -1,0 +1,45 @@
+name: Suno Pesme Studio V1 Windows Build
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Suno-Pesme-Studio-V1/**'
+      - '.github/workflows/suno-pesme-studio-v1.yml'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+
+      - name: Build complete Windows package
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist"
+
+      - name: Verify output
+        shell: powershell
+        run: |
+          if (!(Test-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip)) { throw 'Windows ZIP nije napravljen' }
+          if (!(Test-Path ./dist/Suno-Pesme-Studio-V1-Windows.sha256)) { throw 'SHA256 fajl nije napravljen' }
+          Get-Content ./dist/Suno-Pesme-Studio-V1-Windows.sha256
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Suno-Pesme-Studio-V1-Windows
+          path: |
+            dist/Suno-Pesme-Studio-V1-Windows.zip
+            dist/Suno-Pesme-Studio-V1-Windows.sha256
+          if-no-files-found: error
+          compression-level: 0
