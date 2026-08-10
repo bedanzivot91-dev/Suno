@@ -21,11 +21,11 @@ function Assert-Sha256([string]$Path, [string]$Expected) {
     $actual = (Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actual -ne $Expected.ToLowerInvariant()) { throw "SHA256 mismatch for $Path`nExpected: $Expected`nActual: $actual" }
 }
-function Run-Native([string]$Exe, [string[]]$Args, [string]$Label) {
+function Run-Native([string]$Exe, [string[]]$Arguments, [string]$Label) {
     $old = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        & $Exe @Args 2>&1 | Out-Host
+        & $Exe @Arguments 2>&1 | Out-Host
         $code = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $old
