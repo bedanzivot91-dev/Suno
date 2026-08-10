@@ -31,6 +31,16 @@ func run(py, root, script string, env []string) error {
     return cmd.Run()
 }
 
+func selfTest(py, root string, env []string) error {
+    code := "import sys; from pathlib import Path; root=Path(r'" + filepath.ToSlash(root) + "'); sys.path.insert(0, str(root/'app')); import bootstrap, audio_tools, audio_match; print('SPS_LAUNCHER_SELF_TEST_OK')"
+    cmd := exec.Command(py, "-c", code)
+    cmd.Dir = root
+    cmd.Env = env
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    return cmd.Run()
+}
+
 func main() {
     exe, err := os.Executable()
     if err != nil {
@@ -42,6 +52,16 @@ func main() {
         panic(err)
     }
     env := os.Environ()
+    env = append(env, "SUNO_PROGRAM_ROOT="+root)
+    env = append(env, "PYTHONPATH="+filepath.Join(root, "app"))
+
+    if os.Getenv("SPS_LAUNCHER_SELF_TEST") == "1" {
+        if err := selfTest(py, root, env); err != nil {
+            panic(fmt.Errorf("launcher self-test nije uspeo: %w", err))
+        }
+        return
+    }
+
     if err := run(py, root, "bootstrap.py", env); err != nil {
         panic(fmt.Errorf("bootstrap nije uspeo: %w", err))
     }
