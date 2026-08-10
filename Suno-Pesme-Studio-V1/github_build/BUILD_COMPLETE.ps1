@@ -21,6 +21,17 @@ function Assert-Sha256([string]$Path, [string]$Expected) {
     $actual = (Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actual -ne $Expected.ToLowerInvariant()) { throw "SHA256 mismatch for $Path`nExpected: $Expected`nActual: $actual" }
 }
+function Run-Native([string]$Exe, [string[]]$Args, [string]$Label) {
+    $old = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & $Exe @Args 2>&1 | Out-Host
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $old
+    }
+    if ($code -ne 0) { throw "$Label failed with exit code $code" }
+}
 
 Copy-Item (Join-Path $Legacy 'Program\app') $Program -Recurse -Force
 Copy-Item (Join-Path $Legacy 'Program\plugins') $Program -Recurse -Force
@@ -143,18 +154,12 @@ try { $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -
 finally { Pop-Location }
 
 $env:PYTHONPATH = Join-Path $Program 'app'
-& (Join-Path $PythonDir 'python.exe') -m compileall -q (Join-Path $Program 'app')
-if ($LASTEXITCODE -ne 0) { throw 'Python compile check failed.' }
-& (Join-Path $FFmpegDir 'bin\ffmpeg.exe') -version | Select-Object -First 1
-if ($LASTEXITCODE -ne 0) { throw 'ffmpeg smoke failed.' }
-& (Join-Path $FFmpegDir 'bin\ffprobe.exe') -version | Select-Object -First 1
-if ($LASTEXITCODE -ne 0) { throw 'ffprobe smoke failed.' }
-& $YtExe --version
-if ($LASTEXITCODE -ne 0) { throw 'yt-dlp smoke failed.' }
-& (Join-Path $DenoDir 'deno.exe') --version | Select-Object -First 1
-if ($LASTEXITCODE -ne 0) { throw 'deno smoke failed.' }
-& (Join-Path $FpDir 'fpcalc.exe') -version
-if ($LASTEXITCODE -ne 0) { throw 'fpcalc smoke failed.' }
+Run-Native (Join-Path $PythonDir 'python.exe') @('-m','compileall','-q',(Join-Path $Program 'app')) 'Python compile check'
+Run-Native (Join-Path $FFmpegDir 'bin\ffmpeg.exe') @('-version') 'ffmpeg smoke'
+Run-Native (Join-Path $FFmpegDir 'bin\ffprobe.exe') @('-version') 'ffprobe smoke'
+Run-Native $YtExe @('--version') 'yt-dlp smoke'
+Run-Native (Join-Path $DenoDir 'deno.exe') @('--version') 'deno smoke'
+Run-Native (Join-Path $FpDir 'fpcalc.exe') @('-version') 'fpcalc smoke'
 
 $Required = @(
     'Program\Suno Pesme Studio.exe',
