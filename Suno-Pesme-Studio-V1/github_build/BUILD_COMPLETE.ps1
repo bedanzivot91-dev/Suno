@@ -161,7 +161,7 @@ try { $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -
 finally { Pop-Location }
 
 Run-Native (Join-Path $PythonDir 'python.exe') @('-m','compileall','-q',(Join-Path $Program 'app')) 'Python compile check'
-Run-Native (Join-Path $PythonDir 'python.exe') @('-c','import bootstrap, audio_tools, audio_match; print("SPS_EMBEDDED_IMPORT_OK")') 'Embedded Python import check'
+Run-Native (Join-Path $PythonDir 'python.exe') @('-c','import bootstrap, audio_tools, audio_match') 'Embedded Python import check'
 Run-Native (Join-Path $Program 'Suno Pesme Studio.exe') @() 'Launcher self-test' @{ 'SPS_LAUNCHER_SELF_TEST'='1' }
 Run-Native (Join-Path $FFmpegDir 'bin\ffmpeg.exe') @('-version') 'ffmpeg smoke'
 Run-Native (Join-Path $FFmpegDir 'bin\ffprobe.exe') @('-version') 'ffprobe smoke'
