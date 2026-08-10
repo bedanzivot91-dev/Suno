@@ -144,7 +144,7 @@ func selfTest(py, root string, env []string) error {
     return nil
 }
 
-func runDesktop(url string) error {
+func runDesktop(url string, testMode bool) error {
     w := webview2.NewWithOptions(webview2.WebViewOptions{
         Debug:     false,
         AutoFocus: true,
@@ -161,6 +161,12 @@ func runDesktop(url string) error {
     defer w.Destroy()
     w.SetSize(1180, 720, webview2.HintMin)
     w.Navigate(url)
+    if testMode {
+        go func() {
+            time.Sleep(2 * time.Second)
+            w.Terminate()
+        }()
+    }
     w.Run()
     return nil
 }
@@ -188,23 +194,41 @@ func main() {
         return
     }
 
-    hideConsoleWindow()
+    desktopTest := os.Getenv("SPS_DESKTOP_WINDOW_SELF_TEST") == "1"
+    if !desktopTest {
+        hideConsoleWindow()
+    }
 
     if err := runBootstrap(py, root, env); err != nil {
-        messageBox(err.Error(), 0x10)
+        if desktopTest {
+            fmt.Fprintln(os.Stderr, err.Error())
+        } else {
+            messageBox(err.Error(), 0x10)
+        }
         os.Exit(1)
     }
 
     url := appURL()
     server, owned, err := startServer(py, root, env, url)
     if err != nil {
-        messageBox(err.Error(), 0x10)
+        if desktopTest {
+            fmt.Fprintln(os.Stderr, err.Error())
+        } else {
+            messageBox(err.Error(), 0x10)
+        }
         os.Exit(1)
     }
     defer stopServer(server, owned)
 
-    if err := runDesktop(url); err != nil {
-        messageBox(err.Error(), 0x10)
+    if err := runDesktop(url, desktopTest); err != nil {
+        if desktopTest {
+            fmt.Fprintln(os.Stderr, err.Error())
+        } else {
+            messageBox(err.Error(), 0x10)
+        }
         os.Exit(1)
+    }
+    if desktopTest {
+        fmt.Println("SPS_DESKTOP_WINDOW_SELF_TEST_OK")
     }
 }
