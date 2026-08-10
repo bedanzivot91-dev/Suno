@@ -101,6 +101,20 @@ jobs:
             if (!(Test-Path (Join-Path $installed $p))) { throw "Instalacija nije postavila: $p" }
           }
 
+      - name: Import every installed first-party Python module
+        shell: powershell
+        run: |
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          $py = Join-Path $installed 'python/python.exe'
+          $app = Join-Path $installed 'app'
+          $modules = Get-ChildItem $app -Filter '*.py' -File | Where-Object { $_.BaseName -notmatch '^__' } | Sort-Object Name
+          if ($modules.Count -lt 20) { throw "Premalo app modula u instalaciji: $($modules.Count)" }
+          foreach ($m in $modules) {
+            Write-Host "IMPORT TEST: $($m.BaseName)"
+            & $py -c "import sys; sys.path.insert(0, r'$app'); __import__('$($m.BaseName)'); print('IMPORT_OK:$($m.BaseName)')" 2>&1 | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw "Import nije uspeo: $($m.Name)" }
+          }
+
       - name: Launch installed program self-test
         shell: powershell
         env:
@@ -138,7 +152,7 @@ jobs:
           $releaseExists = ($LASTEXITCODE -eq 0)
           $ErrorActionPreference = 'Stop'
           if (-not $releaseExists) {
-            gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Automatski napravljen Windows paket koji je prošao build, ZIP integritet, instalaciju, launcher self-test i deinstalaciju na GitHub Windows runneru.' --target $env:GITHUB_SHA
+            gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Windows paket je prošao build, SHA256, final ZIP extraction, stvarni installer EXE, import svih app modula, launcher self-test i stvarni uninstaller EXE na Windows runneru.' --target $env:GITHUB_SHA
             if ($LASTEXITCODE -ne 0) { throw 'GitHub Release nije mogao da se napravi.' }
           }
           gh release upload $tag ./dist/Suno-Pesme-Studio-V1-Windows.zip ./dist/Suno-Pesme-Studio-V1-Windows.sha256 --clobber
