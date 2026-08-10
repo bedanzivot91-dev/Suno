@@ -34,6 +34,18 @@ jobs:
           go version
           tar --version
 
+      - name: Verify desktop launcher contract
+        shell: powershell
+        run: |
+          $launcher = Get-Content ./Suno-Pesme-Studio-V1/github_build/launcher/main.go -Raw
+          $gomod = Get-Content ./Suno-Pesme-Studio-V1/github_build/launcher/go.mod -Raw
+          if ($launcher -match 'SUNO_AUTO_OPEN=1') { throw 'Launcher i dalje uključuje automatsko otvaranje browsera.' }
+          if ($launcher -notmatch 'SUNO_AUTO_OPEN=0') { throw 'Launcher ne zaključava SUNO_AUTO_OPEN=0.' }
+          if ($launcher -notmatch 'NewWithOptions') { throw 'Launcher nema native WebView2 prozor.' }
+          if ($launcher -notmatch 'SPS_DESKTOP_PROBE') { throw 'Launcher nema desktop WebView2 probe.' }
+          if ($gomod -notmatch 'github.com/jchv/go-webview2') { throw 'WebView2 dependency nije zaključana u launcher go.mod.' }
+          Write-Host 'DESKTOP LAUNCHER CONTRACT OK'
+
       - name: Build complete Windows package
         shell: powershell
         run: |
@@ -54,24 +66,51 @@ jobs:
           }
           if (-not $ok) { throw 'Windows package build failed after 4 attempts.' }
 
-      - name: Force canonical Panako installer into final ZIP
+      - name: Force canonical Panako and desktop UI into final ZIP
         shell: powershell
         run: |
           $zip = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip
           $canonical = Resolve-Path ./Suno-Pesme-Studio-V1/Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1
-          $patchDir = "$PWD/dist/panako-patched-package"
+          $desktopCss = Resolve-Path ./Suno-Pesme-Studio-V1/Program/app/web/desktop_override.css
+          $desktopJs = Resolve-Path ./Suno-Pesme-Studio-V1/Program/app/web/desktop_home.js
+          $patchDir = "$PWD/dist/desktop-patched-package"
           Remove-Item $patchDir -Recurse -Force -ErrorAction SilentlyContinue
           Expand-Archive $zip -DestinationPath $patchDir -Force
-          $dest = Join-Path $patchDir 'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1'
-          Copy-Item $canonical $dest -Force
-          $text = Get-Content $dest -Raw
-          if ($text -notmatch 'e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211') { throw 'Final ZIP nema pinned Panako commit.' }
-          if ($text -notmatch 'gradle-7\.3\.3-bin\.zip') { throw 'Final ZIP nema Gradle 7.3.3 Panako popravku.' }
+
+          $panakoDest = Join-Path $patchDir 'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1'
+          Copy-Item $canonical $panakoDest -Force
+          $panakoText = Get-Content $panakoDest -Raw
+          if ($panakoText -notmatch 'e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211') { throw 'Final ZIP nema pinned Panako commit.' }
+          if ($panakoText -notmatch 'gradle-7\.3\.3-bin\.zip') { throw 'Final ZIP nema Gradle 7.3.3 Panako popravku.' }
+
+          $webDir = Join-Path $patchDir 'Program/app/web'
+          if (!(Test-Path $webDir)) { throw 'Final ZIP nema Program/app/web.' }
+          Copy-Item $desktopCss (Join-Path $webDir 'desktop_override.css') -Force
+          Copy-Item $desktopJs (Join-Path $webDir 'desktop_home.js') -Force
+          $indexPath = Join-Path $webDir 'index.html'
+          if (!(Test-Path $indexPath)) { throw 'Final ZIP nema web/index.html.' }
+          $html = Get-Content $indexPath -Raw
+          if ($html -notmatch 'desktop_override\.css') {
+            $html = $html -replace '</head>', "  <link rel=\"stylesheet\" href=\"/assets/desktop_override.css\">`r`n</head>"
+          }
+          if ($html -notmatch 'desktop_home\.js') {
+            $html = $html -replace '</body>', "  <script src=\"/assets/desktop_home.js\"></script>`r`n</body>"
+          }
+          Set-Content $indexPath $html -Encoding UTF8
+
+          $patchedHtml = Get-Content $indexPath -Raw
+          if ($patchedHtml -notmatch 'desktop_override\.css') { throw 'Desktop CSS nije učitan u finalnom index.html.' }
+          if ($patchedHtml -notmatch 'desktop_home\.js') { throw 'Desktop home JS nije učitan u finalnom index.html.' }
+          $cssText = Get-Content (Join-Path $webDir 'desktop_override.css') -Raw
+          $jsText = Get-Content (Join-Path $webDir 'desktop_home.js') -Raw
+          if ($cssText -notmatch 'sps-home-login-panel') { throw 'Final ZIP nema desktop readability/login CSS.' }
+          if ($jsText -notmatch 'POVEŽI SUNO NALOG' -or $jsText -notmatch 'POVEŽI YOUTUBE NALOG') { throw 'Final ZIP nema centralne Suno/YouTube kontrole.' }
+
           Remove-Item $zip -Force
           Compress-Archive (Join-Path $patchDir '*') $zip -CompressionLevel Optimal
           $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
           Set-Content ./dist/Suno-Pesme-Studio-V1-Windows.sha256 "$hash  Suno-Pesme-Studio-V1-Windows.zip" -Encoding Ascii
-          Write-Host "CANONICAL PANAKO SCRIPT VERIFIED IN FINAL ZIP: $hash"
+          Write-Host "CANONICAL DESKTOP PACKAGE VERIFIED: $hash"
 
       - name: Verify output and checksum
         shell: powershell
@@ -96,6 +135,9 @@ jobs:
             'Program/Suno Pesme Studio.exe',
             'Program/python/python.exe',
             'Program/app/server.py',
+            'Program/app/web/index.html',
+            'Program/app/web/desktop_override.css',
+            'Program/app/web/desktop_home.js',
             'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
             'Program/tools/ffmpeg/bin/ffmpeg.exe',
             'Program/tools/ffmpeg/bin/ffprobe.exe',
@@ -107,6 +149,8 @@ jobs:
           }
           $panakoText = Get-Content (Join-Path $dst 'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1') -Raw
           if ($panakoText -notmatch 'gradle-7\.3\.3-bin\.zip') { throw 'Raspakovani finalni ZIP nema Gradle 7.3.3 Panako fix.' }
+          $finalIndex = Get-Content (Join-Path $dst 'Program/app/web/index.html') -Raw
+          if ($finalIndex -notmatch 'desktop_override\.css' -or $finalIndex -notmatch 'desktop_home\.js') { throw 'Raspakovani ZIP nema desktop UI uključivanja.' }
 
       - name: Install final ZIP with actual installer EXE
         shell: powershell
@@ -131,6 +175,8 @@ jobs:
             'python/python.exe',
             'app/bootstrap.py',
             'app/server.py',
+            'app/web/desktop_override.css',
+            'app/web/desktop_home.js',
             'plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
             'tools/ffmpeg/bin/ffmpeg.exe',
             'tools/yt-dlp/yt-dlp.exe',
@@ -161,7 +207,7 @@ jobs:
             if ($exitCode -ne 0) { throw "Import nije uspeo: $($m.Name), exit=$exitCode" }
           }
 
-      - name: Launch installed program self-test
+      - name: Launch installed backend self-test without browser
         shell: powershell
         env:
           SPS_LAUNCHER_SELF_TEST: '1'
@@ -176,7 +222,25 @@ jobs:
             $ErrorActionPreference = $old
             $launchOut | Out-Host
             if ($code -ne 0) { throw "Launcher exit code: $code" }
-            if (($launchOut -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK') { throw 'Launcher nije prošao embedded Python import test.' }
+            if (($launchOut -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK') { throw 'Launcher backend self-test nije prošao.' }
+          } finally { Pop-Location }
+
+      - name: Create actual native WebView2 desktop window
+        shell: powershell
+        env:
+          SPS_DESKTOP_PROBE: '1'
+        run: |
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          Push-Location $installed
+          try {
+            $old = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            $desktopOut = & './Suno Pesme Studio.exe' 2>&1
+            $code = $LASTEXITCODE
+            $ErrorActionPreference = $old
+            $desktopOut | Out-Host
+            if ($code -ne 0) { throw "Desktop WebView2 probe exit code: $code" }
+            if (($desktopOut -join "`n") -notmatch 'SPS_DESKTOP_WEBVIEW2_OK') { throw 'Pravi WebView2 desktop prozor nije uspešno napravljen.' }
           } finally { Pop-Location }
 
       - name: Uninstall installed program with actual uninstaller EXE
@@ -214,7 +278,7 @@ jobs:
           $releaseExists = ($LASTEXITCODE -eq 0)
           $ErrorActionPreference = 'Stop'
           if (-not $releaseExists) {
-            gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Windows paket je prošao build, SHA256, final ZIP extraction, stvarni installer EXE, import svih app modula, launcher self-test i stvarni uninstaller EXE na Windows runneru.' --target $env:GITHUB_SHA
+            gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Kompletan Windows paket sa native WebView2 desktop prozorom, većim UI tekstom i Suno/YouTube prijavom na početnoj strani.' --target $env:GITHUB_SHA
             if ($LASTEXITCODE -ne 0) { throw 'GitHub Release nije mogao da se napravi.' }
           }
           gh release upload $tag ./dist/Suno-Pesme-Studio-V1-Windows.zip ./dist/Suno-Pesme-Studio-V1-Windows.sha256 --clobber
