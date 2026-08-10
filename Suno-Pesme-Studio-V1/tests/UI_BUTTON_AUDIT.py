@@ -22,41 +22,51 @@ def main() -> None:
         if not p.is_file():
             fail(f"missing {p}")
     html = index.read_text(encoding="utf-8", errors="replace")
-    js = "\n".join(
-        p.read_text(encoding="utf-8", errors="replace")
-        for p in sorted(web.glob("*.js"))
-    )
+    js = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in sorted(web.glob("*.js")))
 
-    button_tags = re.findall(r"<button\b[^>]*>", html, flags=re.I | re.S)
+    matches = list(re.finditer(r"<button\b[^>]*>", html, flags=re.I | re.S))
     ids: list[str] = []
     delegated = 0
-    no_id_no_delegate: list[str] = []
+    unclassified: list[tuple[int, str, str]] = []
     delegate_attrs = (
-        "data-view=", "data-go=", "data-br-view=", "data-sm-view=", "data-lc-view=",
-        "data-vl-view=", "data-sg-view=", "data-br-queue-tab=",
+        "data-view", "data-go", "data-br-view", "data-sm-view", "data-lc-view",
+        "data-vl-view", "data-sg-view", "data-br-queue-tab",
     )
-    for tag in button_tags:
+    for match in matches:
+        tag = match.group(0)
         m = re.search(r'\bid=["\']([^"\']+)["\']', tag, flags=re.I)
         if m:
             ids.append(m.group(1))
             continue
-        if any(attr in tag for attr in delegate_attrs):
+
+        data_pairs = re.findall(r'\b(data-[\w-]+)(?:=["\']([^"\']*)["\'])?', tag, flags=re.I)
+        if any(name.lower() in delegate_attrs for name, _ in data_pairs):
             delegated += 1
             continue
+        if data_pairs and any((name in js) or (value and value in js) for name, value in data_pairs):
+            delegated += 1
+            continue
+
         cls = re.search(r'\bclass=["\']([^"\']+)["\']', tag, flags=re.I)
-        if cls and any(c in js for c in cls.group(1).split() if len(c) >= 5):
+        if cls and any(c in js for c in cls.group(1).split() if len(c) >= 4):
             delegated += 1
             continue
-        no_id_no_delegate.append(re.sub(r"\s+", " ", tag)[:180])
+        title = re.search(r'\btitle=["\']([^"\']+)["\']', tag, flags=re.I)
+        if title and title.group(1) in js:
+            delegated += 1
+            continue
+
+        line = html.count("\n", 0, match.start()) + 1
+        before = html.rfind("\n", 0, match.start())
+        after = html.find("\n", match.end())
+        context = html[(before + 1 if before >= 0 else 0):(after if after >= 0 else match.end() + 180)]
+        unclassified.append((line, re.sub(r"\s+", " ", tag)[:180], re.sub(r"\s+", " ", context)[:500]))
 
     duplicate_ids = sorted({x for x in ids if ids.count(x) > 1})
     if duplicate_ids:
         fail("duplicate button ids: " + ", ".join(duplicate_ids))
 
-    missing_refs: list[str] = []
-    for button_id in ids:
-        if not re.search(re.escape(button_id), js):
-            missing_refs.append(button_id)
+    missing_refs = [button_id for button_id in ids if not re.search(re.escape(button_id), js)]
     if missing_refs:
         fail("button ids without any JS reference: " + ", ".join(sorted(missing_refs)))
 
@@ -70,11 +80,9 @@ def main() -> None:
     if absent:
         fail("required controls absent: " + ", ".join(absent))
 
-    print(f"UI_BUTTON_AUDIT_OK buttons_with_id={len(ids)} delegated={delegated} unclassified_no_id={len(no_id_no_delegate)}")
-    if no_id_no_delegate:
-        print("UI_BUTTON_AUDIT_INFO unclassified buttons (not failure):")
-        for tag in no_id_no_delegate[:40]:
-            print("  " + tag)
+    print(f"UI_BUTTON_AUDIT_OK buttons_with_id={len(ids)} delegated={delegated} unclassified_no_id={len(unclassified)}")
+    for line, tag, context in unclassified:
+        print(f"UI_BUTTON_UNCLASSIFIED line={line} tag={tag} context={context}")
 
 
 if __name__ == "__main__":
