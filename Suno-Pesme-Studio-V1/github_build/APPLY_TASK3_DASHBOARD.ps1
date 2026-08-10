@@ -15,10 +15,12 @@ foreach($name in @('task3-dashboard.js','task3-dashboard.css')) {
 }
 $html = Get-Content $index -Raw
 if ($html -notmatch 'task3-dashboard\.css') {
-  $html = $html -replace '</head>', "  <link rel=\"stylesheet\" href=\"/assets/task3-dashboard.css\">`r`n</head>"
+  $cssTag = '  <link rel="stylesheet" href="/assets/task3-dashboard.css">' + "`r`n</head>"
+  $html = $html -replace '</head>', $cssTag
 }
 if ($html -notmatch 'task3-dashboard\.js') {
-  $html = $html -replace '</body>', "  <script src=\"/assets/task3-dashboard.js\"></script>`r`n</body>"
+  $jsTag = '  <script src="/assets/task3-dashboard.js"></script>' + "`r`n</body>"
+  $html = $html -replace '</body>', $jsTag
 }
 Set-Content $index $html -Encoding UTF8
 $final = Get-Content $index -Raw
