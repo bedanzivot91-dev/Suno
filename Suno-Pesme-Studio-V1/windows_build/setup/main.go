@@ -168,11 +168,18 @@ func main(){
     launcher:=filepath.Join(target,"Suno Pesme Studio.exe")
     if _,e:=os.Stat(launcher);e!=nil{rollback(target,backup);box("Glavni launcher nije pronađen posle instalacije.",0x10);return}
     if e:=runLauncherSelfTest(target); e!=nil { rollback(target,backup); box("Launcher provera nije prošla. Instalacija je vraćena.\n\n"+e.Error(),0x10); return }
+
+    panakoWarning := ""
     if !ciMode {
         code,out:=runPanako(target)
-        if code==3010 { box("Windows/WSL zahteva restart. Program je kopiran, ali instalacija Panako/Olaf još NIJE završena. Restartuj Windows i ponovo pokreni isti INSTALIRAJ_PROGRAM.exe.",0x30); os.Exit(3010) }
-        if code!=0 { rollback(target,backup); if len(out)>1800{out=out[len(out)-1800:]};box("Panako/Olaf instalacija ili E2E provera nije prošla. Instalacija programa je vraćena na prethodno stanje.\n\n"+out,0x10);return }
+        if code==3010 {
+            panakoWarning = "Panako/Olaf dodatak zahteva restart Windows/WSL sistema. Glavni program je ipak uspešno instaliran. Posle restarta pokreni Panako instalaciju iz programa."
+        } else if code!=0 {
+            if len(out)>1800{out=out[len(out)-1800:]}
+            panakoWarning = "Panako/Olaf dodatak trenutno nije instaliran, ali glavni program NEĆE biti obrisan niti vraćen na staru verziju.\n\n"+out
+        }
     }
+
     if !ciMode {
         desktop:=filepath.Join(os.Getenv("USERPROFILE"),"Desktop",appName+".lnk")
         start:=filepath.Join(os.Getenv("APPDATA"),"Microsoft","Windows","Start Menu","Programs",appName+".lnk")
@@ -188,6 +195,10 @@ func main(){
     }
     _=os.RemoveAll(backup)
     if ciMode { fmt.Println("SPS_INSTALL_TEST_OK"); return }
-    box("Suno Pesme Studio je instaliran. Panako + Olaf E2E provera je prošla. Pokrećem program.",0x40)
+    if panakoWarning != "" {
+        box("Suno Pesme Studio je instaliran i može da se pokrene.\n\n"+panakoWarning,0x30)
+    } else {
+        box("Suno Pesme Studio je instaliran. Panako + Olaf E2E provera je prošla. Pokrećem program.",0x40)
+    }
     _=exec.Command(launcher).Start()
 }
