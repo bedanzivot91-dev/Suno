@@ -159,7 +159,13 @@ jobs:
           $uninstallOut | Out-Host
           if ($code -ne 0) { throw "Uninstaller exit code: $code" }
           if (($uninstallOut -join "`n") -notmatch 'SPS_UNINSTALL_TEST_OK') { throw 'Uninstaller nije vratio SPS_UNINSTALL_TEST_OK.' }
-          if (Test-Path $installed) { throw 'Program folder postoji i posle deinstalacije.' }
+          $removed = $false
+          for ($i = 0; $i -lt 20; $i++) {
+            if (!(Test-Path $installed)) { $removed = $true; break }
+            Start-Sleep -Milliseconds 500
+          }
+          if (-not $removed) { throw 'Program folder postoji i posle odložene deinstalacije.' }
+          Write-Host 'SPS_UNINSTALL_FOLDER_REMOVED_OK'
 
       - name: Publish verified Windows ZIP to GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
