@@ -6,7 +6,7 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '../..')
 $sourceWeb = Join-Path $repoRoot 'Suno-Pesme-Studio-V1/Program/app/web'
 $web = Join-Path $PackageRoot 'Program/app/web'
 $index = Join-Path $web 'index.html'
-if (!(Test-Path $index)) { throw "Task3/5: index.html nije pronađen: $index" }
+if (!(Test-Path $index)) { throw "Task3/5: index.html nije pronadjen: $index" }
 New-Item -ItemType Directory -Path $web -Force | Out-Null
 foreach($name in @('task3-dashboard.js','task3-dashboard.css','task5-readable-ui.css')) {
   $src = Join-Path $sourceWeb $name
@@ -47,8 +47,8 @@ foreach($cssNeedle in @('html{font-size:17px}','body{font-size:17px','button,inp
 }
 $py = Join-Path $PackageRoot 'Program/python/python.exe'
 $uiAudit = Join-Path $repoRoot 'Suno-Pesme-Studio-V1/tests/UI_BUTTON_AUDIT.py'
-if (!(Test-Path $py)) { throw 'Task10: embedded Python nije pronađen za UI audit.' }
-if (!(Test-Path $uiAudit)) { throw 'Task10: UI_BUTTON_AUDIT.py nije pronađen.' }
+if (!(Test-Path $py)) { throw 'Task10: embedded Python nije pronadjen za UI audit.' }
+if (!(Test-Path $uiAudit)) { throw 'Task10: UI_BUTTON_AUDIT.py nije pronadjen.' }
 & $py $uiAudit $web
-if ($LASTEXITCODE -ne 0) { throw "Task10: UI button audit nije prošao: $LASTEXITCODE" }
+if ($LASTEXITCODE -ne 0) { throw "Task10: UI button audit nije prosao: $LASTEXITCODE" }
 Write-Host 'TASK3_TASK4_TASK5_TASK10_WEB_PATCH_OK'
