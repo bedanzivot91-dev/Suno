@@ -38,7 +38,23 @@ jobs:
         shell: powershell
         run: |
           Set-ExecutionPolicy Bypass -Scope Process -Force
-          ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist"
+          $ok = $false
+          for ($attempt = 1; $attempt -le 4; $attempt++) {
+            Write-Host "WINDOWS BUILD ATTEMPT $attempt/4"
+            try {
+              ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist"
+              if ($LASTEXITCODE -eq 0 -or $null -eq $LASTEXITCODE) {
+                $ok = $true
+                break
+              }
+            } catch {
+              Write-Host "BUILD ATTEMPT $attempt FAILED: $($_.Exception.Message)" -ForegroundColor Yellow
+            }
+            if ($attempt -lt 4) {
+              Start-Sleep -Seconds (10 * $attempt)
+            }
+          }
+          if (-not $ok) { throw 'Windows package build failed after 4 attempts.' }
 
       - name: Verify output and checksum
         shell: powershell
