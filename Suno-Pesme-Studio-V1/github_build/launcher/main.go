@@ -39,6 +39,18 @@ func messageBox(text string, flags uintptr) {
     proc.Call(0, uintptr(unsafe.Pointer(t)), uintptr(unsafe.Pointer(c)), flags)
 }
 
+func hideConsoleWindow() {
+    kernel32 := syscall.NewLazyDLL("kernel32.dll")
+    getConsoleWindow := kernel32.NewProc("GetConsoleWindow")
+    hwnd, _, _ := getConsoleWindow.Call()
+    if hwnd == 0 {
+        return
+    }
+    user32 := syscall.NewLazyDLL("user32.dll")
+    showWindow := user32.NewProc("ShowWindow")
+    showWindow.Call(hwnd, 0) // SW_HIDE
+}
+
 func processEnv(root string) []string {
     env := os.Environ()
     env = append(env, "SUNO_PROGRAM_ROOT="+root)
@@ -96,9 +108,6 @@ func startServer(py, root string, env []string, url string) (*exec.Cmd, bool, er
     for i := 0; i < 80; i++ {
         if ready(url) {
             return cmd, true, nil
-        }
-        if cmd.ProcessState != nil && cmd.ProcessState.Exited() {
-            break
         }
         time.Sleep(125 * time.Millisecond)
     }
@@ -174,10 +183,15 @@ func main() {
 
     if os.Getenv("SPS_LAUNCHER_SELF_TEST") == "1" {
         if err := selfTest(py, root, env); err != nil {
+            fmt.Fprintln(os.Stderr, err.Error())
             os.Exit(2)
         }
+        fmt.Println("SPS_LAUNCHER_SELF_TEST_OK")
         return
     }
+
+    // Kada korisnik pokrene EXE, konzola se odmah sakriva. Ostaje samo pravi Windows prozor aplikacije.
+    hideConsoleWindow()
 
     if err := runBootstrap(py, root, env); err != nil {
         messageBox(err.Error(), 0x10)
