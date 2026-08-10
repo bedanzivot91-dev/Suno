@@ -17,11 +17,15 @@ def main() -> None:
     index = web / "index.html"
     app = web / "app.js"
     task3 = web / "task3-dashboard.js"
-    for p in (index, app, task3):
+    task10 = web / "task10-controls.js"
+    for p in (index, app, task3, task10):
         if not p.is_file():
             fail(f"missing {p}")
     html = index.read_text(encoding="utf-8", errors="replace")
-    js = app.read_text(encoding="utf-8", errors="replace") + "\n" + task3.read_text(encoding="utf-8", errors="replace")
+    js = "\n".join(
+        p.read_text(encoding="utf-8", errors="replace")
+        for p in sorted(web.glob("*.js"))
+    )
 
     button_tags = re.findall(r"<button\b[^>]*>", html, flags=re.I | re.S)
     ids: list[str] = []
@@ -39,7 +43,6 @@ def main() -> None:
         if any(attr in tag for attr in delegate_attrs):
             delegated += 1
             continue
-        # Buttons without ids can be intentionally decorative or handled by class delegation.
         cls = re.search(r'\bclass=["\']([^"\']+)["\']', tag, flags=re.I)
         if cls and any(c in js for c in cls.group(1).split() if len(c) >= 5):
             delegated += 1
@@ -52,32 +55,25 @@ def main() -> None:
 
     missing_refs: list[str] = []
     for button_id in ids:
-        # The HTML definition is not in js; every id button should be referenced by app/task3 JS.
-        patterns = (
-            re.escape(button_id),
-            re.escape("#" + button_id),
-        )
-        if not any(re.search(p, js) for p in patterns):
+        if not re.search(re.escape(button_id), js):
             missing_refs.append(button_id)
-
-    # Allow only known purely visual window controls which are aria-hidden and deliberately inert.
-    allowed_inert = set()
-    missing_refs = [x for x in missing_refs if x not in allowed_inert]
     if missing_refs:
         fail("button ids without any JS reference: " + ", ".join(sorted(missing_refs)))
 
     required_controls = {
         "t3SunoLogin", "t3SunoCheck", "t3YoutubeLogin", "t3YoutubeRefresh", "t3RefreshAll",
-        "openSunoLoginBtn", "checkSunoBtn",
+        "openSunoLoginBtn", "checkSunoBtn", "vlRecentPrev", "vlRecentNext", "vlShuffleBtn",
+        "vlRepeatBtn", "sgRepeatBtn",
     }
-    absent = sorted(required_controls - set(ids) - set(re.findall(r'id=["\']([^"\']+)["\']', task3)))
+    dynamic_ids = set(re.findall(r'id=["\']([^"\']+)["\']', task3.read_text(encoding="utf-8", errors="replace")))
+    absent = sorted(required_controls - set(ids) - dynamic_ids)
     if absent:
-        fail("required account controls absent: " + ", ".join(absent))
+        fail("required controls absent: " + ", ".join(absent))
 
     print(f"UI_BUTTON_AUDIT_OK buttons_with_id={len(ids)} delegated={delegated} unclassified_no_id={len(no_id_no_delegate)}")
     if no_id_no_delegate:
         print("UI_BUTTON_AUDIT_INFO unclassified buttons (not failure):")
-        for tag in no_id_no_delegate[:20]:
+        for tag in no_id_no_delegate[:40]:
             print("  " + tag)
 
 
