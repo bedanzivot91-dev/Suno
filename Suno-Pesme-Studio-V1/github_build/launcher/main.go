@@ -164,10 +164,10 @@ func runDesktop(url string, testMode bool) error {
     w.SetSize(1180, 720, webview2.HintMin)
     w.Navigate(url)
     if testMode {
-        go func() {
-            time.Sleep(2 * time.Second)
-            w.Terminate()
-        }()
+        if w.Window() == nil {
+            return fmt.Errorf("native WebView2 HWND nije napravljen")
+        }
+        return nil
     }
     w.Run()
     return nil
