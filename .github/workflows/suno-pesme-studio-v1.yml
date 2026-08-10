@@ -81,8 +81,13 @@ jobs:
           $pkg = Resolve-Path ./dist/e2e-package
           Push-Location $pkg
           try {
-            & ./INSTALIRAJ_PROGRAM.exe 2>&1 | Tee-Object -Variable installOut | Out-Host
-            if ($LASTEXITCODE -ne 0) { throw "Installer exit code: $LASTEXITCODE" }
+            $old = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            $installOut = & ./INSTALIRAJ_PROGRAM.exe 2>&1
+            $code = $LASTEXITCODE
+            $ErrorActionPreference = $old
+            $installOut | Out-Host
+            if ($code -ne 0) { throw "Installer exit code: $code" }
             if (($installOut -join "`n") -notmatch 'SPS_INSTALL_TEST_OK') { throw 'Installer nije vratio SPS_INSTALL_TEST_OK.' }
           } finally { Pop-Location }
           $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
@@ -111,8 +116,14 @@ jobs:
           if ($modules.Count -lt 20) { throw "Premalo app modula u instalaciji: $($modules.Count)" }
           foreach ($m in $modules) {
             Write-Host "IMPORT TEST: $($m.BaseName)"
-            & $py -c "import sys; sys.path.insert(0, r'$app'); __import__('$($m.BaseName)'); print('IMPORT_OK:$($m.BaseName)')" 2>&1 | Out-Host
-            if ($LASTEXITCODE -ne 0) { throw "Import nije uspeo: $($m.Name)" }
+            $codeText = "import sys,traceback; sys.path.insert(0, r'$app'); name='$($m.BaseName)';`ntry:`n __import__(name); print('IMPORT_OK:'+name)`nexcept BaseException:`n traceback.print_exc(); raise"
+            $old = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            $out = & $py -c $codeText 2>&1
+            $exitCode = $LASTEXITCODE
+            $ErrorActionPreference = $old
+            $out | Out-Host
+            if ($exitCode -ne 0) { throw "Import nije uspeo: $($m.Name), exit=$exitCode" }
           }
 
       - name: Launch installed program self-test
@@ -123,8 +134,13 @@ jobs:
           $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
           Push-Location $installed
           try {
-            & './Suno Pesme Studio.exe' 2>&1 | Tee-Object -Variable launchOut | Out-Host
-            if ($LASTEXITCODE -ne 0) { throw "Launcher exit code: $LASTEXITCODE" }
+            $old = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            $launchOut = & './Suno Pesme Studio.exe' 2>&1
+            $code = $LASTEXITCODE
+            $ErrorActionPreference = $old
+            $launchOut | Out-Host
+            if ($code -ne 0) { throw "Launcher exit code: $code" }
             if (($launchOut -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK') { throw 'Launcher nije prošao embedded Python import test.' }
           } finally { Pop-Location }
 
@@ -135,8 +151,13 @@ jobs:
         run: |
           $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
           $un = Join-Path $installed 'Deinstaliraj Suno Pesme Studio.exe'
-          & $un 2>&1 | Tee-Object -Variable uninstallOut | Out-Host
-          if ($LASTEXITCODE -ne 0) { throw "Uninstaller exit code: $LASTEXITCODE" }
+          $old = $ErrorActionPreference
+          $ErrorActionPreference = 'Continue'
+          $uninstallOut = & $un 2>&1
+          $code = $LASTEXITCODE
+          $ErrorActionPreference = $old
+          $uninstallOut | Out-Host
+          if ($code -ne 0) { throw "Uninstaller exit code: $code" }
           if (($uninstallOut -join "`n") -notmatch 'SPS_UNINSTALL_TEST_OK') { throw 'Uninstaller nije vratio SPS_UNINSTALL_TEST_OK.' }
           if (Test-Path $installed) { throw 'Program folder postoji i posle deinstalacije.' }
 
