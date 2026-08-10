@@ -21,14 +21,20 @@ function Assert-Sha256([string]$Path, [string]$Expected) {
     $actual = (Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actual -ne $Expected.ToLowerInvariant()) { throw "SHA256 mismatch for $Path`nExpected: $Expected`nActual: $actual" }
 }
-function Run-Native([string]$Exe, [string[]]$Arguments, [string]$Label) {
+function Run-Native([string]$Exe, [string[]]$Arguments, [string]$Label, [hashtable]$ExtraEnv = @{}) {
     $old = $ErrorActionPreference
+    $saved = @{}
+    foreach ($k in $ExtraEnv.Keys) {
+        $saved[$k] = [Environment]::GetEnvironmentVariable($k, 'Process')
+        [Environment]::SetEnvironmentVariable($k, [string]$ExtraEnv[$k], 'Process')
+    }
     try {
         $ErrorActionPreference = 'Continue'
         & $Exe @Arguments 2>&1 | Out-Host
         $code = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $old
+        foreach ($k in $ExtraEnv.Keys) { [Environment]::SetEnvironmentVariable($k, $saved[$k], 'Process') }
     }
     if ($code -ne 0) { throw "$Label failed with exit code $code" }
 }
@@ -64,6 +70,7 @@ if (!$Pth) { throw 'Python _pth file not found.' }
 $Text = Get-Content $Pth.FullName -Raw
 $Text = $Text -replace '#import site','import site'
 if ($Text -notmatch '(?m)^\.\\Lib\\site-packages$') { $Text += "`r`n.\Lib\site-packages`r`n" }
+if ($Text -notmatch '(?m)^\.\.\\app$') { $Text += "..\app`r`n" }
 Set-Content $Pth.FullName $Text -Encoding Ascii
 $GetPip = Join-Path $Work 'get-pip.py'
 Download 'https://bootstrap.pypa.io/get-pip.py' $GetPip
@@ -131,7 +138,7 @@ Copy-Item $fp.FullName (Join-Path $FpDir 'fpcalc.exe') -Force
 
 $Launcher = Join-Path $V1 'github_build\launcher\main.go'
 Push-Location (Split-Path $Launcher)
-try { $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -trimpath -o (Join-Path $Program 'Suno Pesme Studio.exe') . }
+try { $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -trimpath -o (Join-Path $Program 'Suno Pesme Studio.exe') .; if ($LASTEXITCODE -ne 0) { throw 'Launcher Go build failed.' } }
 finally { Pop-Location }
 
 $Package = Join-Path $Work 'package'
@@ -147,14 +154,15 @@ $UnSrc = Join-Path $V1 'windows_build\uninstaller'
 if (-not (Test-Path $SetupSrc)) { $SetupSrc = Join-Path $Legacy 'windows_build\setup' }
 if (-not (Test-Path $UnSrc)) { $UnSrc = Join-Path $Legacy 'windows_build\uninstaller' }
 Push-Location $SetupSrc
-try { $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -trimpath -o (Join-Path $Package 'INSTALIRAJ_PROGRAM.exe') . }
+try { $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -trimpath -o (Join-Path $Package 'INSTALIRAJ_PROGRAM.exe') .; if ($LASTEXITCODE -ne 0) { throw 'Installer Go build failed.' } }
 finally { Pop-Location }
 Push-Location $UnSrc
-try { $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -trimpath -o (Join-Path $Package 'DEINSTALIRAJ_PROGRAM.exe') . }
+try { $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -trimpath -o (Join-Path $Package 'DEINSTALIRAJ_PROGRAM.exe') .; if ($LASTEXITCODE -ne 0) { throw 'Uninstaller Go build failed.' } }
 finally { Pop-Location }
 
-$env:PYTHONPATH = Join-Path $Program 'app'
 Run-Native (Join-Path $PythonDir 'python.exe') @('-m','compileall','-q',(Join-Path $Program 'app')) 'Python compile check'
+Run-Native (Join-Path $PythonDir 'python.exe') @('-c','import bootstrap, audio_tools, audio_match; print("SPS_EMBEDDED_IMPORT_OK")') 'Embedded Python import check'
+Run-Native (Join-Path $Program 'Suno Pesme Studio.exe') @() 'Launcher self-test' @{ 'SPS_LAUNCHER_SELF_TEST'='1' }
 Run-Native (Join-Path $FFmpegDir 'bin\ffmpeg.exe') @('-version') 'ffmpeg smoke'
 Run-Native (Join-Path $FFmpegDir 'bin\ffprobe.exe') @('-version') 'ffprobe smoke'
 Run-Native $YtExe @('--version') 'yt-dlp smoke'
@@ -170,6 +178,7 @@ $Required = @(
     'Program\tools\yt-dlp\yt-dlp.exe',
     'Program\tools\deno\deno.exe',
     'Program\tools\fpcalc\fpcalc.exe',
+    'Program\plugins\INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
     'INSTALIRAJ_PROGRAM.exe',
     'DEINSTALIRAJ_PROGRAM.exe'
 )
