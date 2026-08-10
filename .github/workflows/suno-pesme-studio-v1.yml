@@ -16,6 +16,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: suno-pesme-studio-v1-release
+  cancel-in-progress: true
+
 jobs:
   build-windows:
     runs-on: windows-latest
