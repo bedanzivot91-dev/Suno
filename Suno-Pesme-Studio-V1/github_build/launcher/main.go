@@ -105,7 +105,10 @@ func startServer(py, root string, env []string, url string) (*exec.Cmd, bool, er
     if err := cmd.Start(); err != nil {
         return nil, false, fmt.Errorf("lokalni backend nije mogao da se pokrene: %w", err)
     }
-    for i := 0; i < 80; i++ {
+    // Na sporijim Windows mašinama antivirus, prvi SQLite pristup i inicijalizacija
+    // lokalnih foldera mogu produžiti prvi start. Čekaj do 45 sekundi umesto
+    // ranijih ~10 sekundi da installer ne proglasi ispravan start greškom.
+    for i := 0; i < 360; i++ {
         if ready(url) {
             return cmd, true, nil
         }
@@ -113,7 +116,7 @@ func startServer(py, root string, env []string, url string) (*exec.Cmd, bool, er
     }
     _ = cmd.Process.Kill()
     _, _ = cmd.Process.Wait()
-    return nil, false, fmt.Errorf("lokalni backend nije postao spreman na vreme")
+    return nil, false, fmt.Errorf("lokalni backend nije postao spreman u roku od 45 sekundi")
 }
 
 func stopServer(cmd *exec.Cmd, owned bool) {
