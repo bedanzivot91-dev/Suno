@@ -1,0 +1,26 @@
+name: Suno V1 Generate Go Sum
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Suno-Pesme-Studio-V1/github_build/launcher/**'
+      - '.github/workflows/suno-v1-generate-gosum.yml'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate exact go.sum
+        shell: powershell
+        run: |
+          Set-Location ./Suno-Pesme-Studio-V1/github_build/launcher
+          go mod tidy
+          Write-Host '---GO_SUM_BEGIN---'
+          Get-Content ./go.sum
+          Write-Host '---GO_SUM_END---'
+          go build -trimpath -o ./SunoPesmeStudio-test.exe .
+          if ($LASTEXITCODE -ne 0) { throw "launcher build failed: $LASTEXITCODE" }
+          Write-Host 'LAUNCHER_BUILD_WITH_GENERATED_GOSUM_OK'
