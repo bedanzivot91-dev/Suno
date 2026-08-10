@@ -1,0 +1,57 @@
+name: Suno Pesme Studio V1 Windows Build
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Suno-Pesme-Studio-V1/**'
+      - '.github/workflows/suno-pesme-studio-v1.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'Suno-Pesme-Studio-V1/**'
+      - '.github/workflows/suno-pesme-studio-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify build tools
+        shell: powershell
+        run: |
+          go version
+          tar --version
+
+      - name: Build complete Windows package
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist"
+
+      - name: Verify output
+        shell: powershell
+        run: |
+          if (!(Test-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip)) { throw 'Windows ZIP nije napravljen' }
+          if (!(Test-Path ./dist/Suno-Pesme-Studio-V1-Windows.sha256)) { throw 'SHA256 fajl nije napravljen' }
+          Get-Content ./dist/Suno-Pesme-Studio-V1-Windows.sha256
+
+      - name: Publish Windows ZIP to GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = 'suno-pesme-studio-v1-latest'
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Automatski napravljen kompletan Windows paket iz main grane.' --target $env:GITHUB_SHA
+          }
+          gh release upload $tag ./dist/Suno-Pesme-Studio-V1-Windows.zip ./dist/Suno-Pesme-Studio-V1-Windows.sha256 --clobber
