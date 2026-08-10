@@ -55,6 +55,8 @@ func processEnv(root string) []string {
     env := os.Environ()
     env = append(env, "SUNO_PROGRAM_ROOT="+root)
     env = append(env, "PYTHONPATH="+filepath.Join(root, "app"))
+    env = append(env, "PYTHONUTF8=1")
+    env = append(env, "PYTHONIOENCODING=utf-8")
     env = append(env, "SUNO_AUTO_OPEN=0")
     env = append(env, "SUNO_DESKTOP_MODE=1")
     return env
