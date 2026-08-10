@@ -1,0 +1,57 @@
+name: Suno V1 Task 1 Desktop Window
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Suno-Pesme-Studio-V1/github_build/launcher/**'
+      - 'Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1'
+      - '.github/workflows/suno-v1-task1-desktop.yml'
+  workflow_dispatch:
+
+jobs:
+  verify-desktop-window:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build complete Windows package
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist-task1"
+          if ($LASTEXITCODE -ne 0) { throw "BUILD_COMPLETE.ps1 failed: $LASTEXITCODE" }
+
+      - name: Verify native desktop window opens and closes
+        shell: powershell
+        env:
+          SPS_DESKTOP_WINDOW_SELF_TEST: '1'
+        run: |
+          $exe = Resolve-Path './dist-task1/work/Program/Suno Pesme Studio.exe'
+          Push-Location (Split-Path $exe)
+          try {
+            $old = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            $out = & $exe 2>&1
+            $code = $LASTEXITCODE
+            $ErrorActionPreference = $old
+            $out | Out-Host
+            if ($code -ne 0) { throw "Desktop launcher exit code: $code" }
+            if (($out -join "`n") -notmatch 'SPS_DESKTOP_WINDOW_SELF_TEST_OK') {
+              throw 'Native WebView2 desktop window self-test marker was not returned.'
+            }
+          } finally {
+            Pop-Location
+          }
+          Write-Host 'TASK_1_NATIVE_DESKTOP_WINDOW_OK'
+
+      - name: Verify launcher does not request browser auto-open
+        shell: powershell
+        run: |
+          $src = Get-Content './Suno-Pesme-Studio-V1/github_build/launcher/main.go' -Raw
+          if ($src -match 'SUNO_AUTO_OPEN=1') { throw 'Launcher still enables browser auto-open.' }
+          if ($src -notmatch 'SUNO_AUTO_OPEN=0') { throw 'Launcher does not explicitly disable browser auto-open.' }
+          if ($src -notmatch 'webview2\.NewWithOptions') { throw 'Native WebView2 window code is missing.' }
+          Write-Host 'TASK_1_NO_BROWSER_AUTO_OPEN_OK'
