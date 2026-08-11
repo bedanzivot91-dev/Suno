@@ -1,0 +1,60 @@
+name: Suno V1 Panako Olaf E2E
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Suno-Pesme-Studio-V1/Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1'
+      - 'Suno-Pesme-Studio-V1/Program/app/panako_engine.py'
+      - '.github/workflows/suno-v1-panako-olaf-e2e.yml'
+  workflow_dispatch:
+
+jobs:
+  panako-olaf-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Java 17 FFmpeg Git
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk-headless ffmpeg git unzip
+          java -version
+          ffmpeg -version | head -n 1
+      - name: Checkout pinned Panako source
+        run: |
+          git clone https://github.com/JorenSix/Panako.git /tmp/panako
+          git -C /tmp/panako fetch --depth 1 origin e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211
+          git -C /tmp/panako checkout --detach e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211
+          test "$(git -C /tmp/panako rev-parse HEAD)" = 'e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211'
+          ! grep -q 'org.lmdbjava.*0.8.3-SNAPSHOT' /tmp/panako/build.gradle
+      - name: Pin Gradle 7.3.3 and build Panako
+        run: |
+          cd /tmp/panako
+          chmod +x ./gradlew
+          sed -i 's#gradle-7\.2-bin\.zip#gradle-7.3.3-bin.zip#' gradle/wrapper/gradle-wrapper.properties
+          if grep -q '^distributionSha256Sum=' gradle/wrapper/gradle-wrapper.properties; then
+            sed -i 's#^distributionSha256Sum=.*#distributionSha256Sum=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302#' gradle/wrapper/gradle-wrapper.properties
+          else
+            printf '\ndistributionSha256Sum=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302\n' >> gradle/wrapper/gradle-wrapper.properties
+          fi
+          ./gradlew --no-daemon shadowJar
+          ./gradlew --no-daemon install
+          test -s "$HOME/.panako/panako.jar"
+          java -jar "$HOME/.panako/panako.jar" -v
+      - name: Panako and Olaf real store query E2E
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/sps-panako-e2e
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/media" "$ROOT/panako-db" "$ROOT/panako-cache" "$ROOT/olaf-db" "$ROOT/olaf-cache"
+          ffmpeg -hide_banner -loglevel error -y -f lavfi -i 'anoisesrc=color=pink:duration=32:seed=12345' -ac 1 -ar 44100 "$ROOT/media/reference.wav"
+          ffmpeg -hide_banner -loglevel error -y -ss 9 -t 12 -i "$ROOT/media/reference.wav" -c:a pcm_s16le -ac 1 -ar 44100 "$ROOT/media/query.wav"
+          JAR="$HOME/.panako/panako.jar"
+          java -jar "$JAR" store STRATEGY=panako PANAKO_LMDB_FOLDER="$ROOT/panako-db" PANAKO_CACHE_FOLDER="$ROOT/panako-cache" "$ROOT/media/reference.wav" > /tmp/panako-store.txt
+          java -jar "$JAR" query STRATEGY=panako PANAKO_LMDB_FOLDER="$ROOT/panako-db" PANAKO_CACHE_FOLDER="$ROOT/panako-cache" "$ROOT/media/query.wav" | tee /tmp/panako-query.txt
+          grep -q 'reference.wav' /tmp/panako-query.txt
+          java -jar "$JAR" store STRATEGY=olaf OLAF_LMDB_FOLDER="$ROOT/olaf-db" OLAF_CACHE_FOLDER="$ROOT/olaf-cache" "$ROOT/media/reference.wav" > /tmp/olaf-store.txt
+          java -jar "$JAR" query STRATEGY=olaf OLAF_LMDB_FOLDER="$ROOT/olaf-db" OLAF_CACHE_FOLDER="$ROOT/olaf-cache" "$ROOT/media/query.wav" | tee /tmp/olaf-query.txt
+          grep -q 'reference.wav' /tmp/olaf-query.txt
+          echo PANAKO_OLAF_REAL_E2E_OK
