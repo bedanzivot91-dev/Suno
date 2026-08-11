@@ -8,13 +8,15 @@ $web = Join-Path $PackageRoot 'Program/app/web'
 $index = Join-Path $web 'index.html'
 if (!(Test-Path $index)) { throw "Task3/5/10/11: index.html nije pronadjen: $index" }
 New-Item -ItemType Directory -Path $web -Force | Out-Null
-$overlayFiles=@('task3-dashboard.js','task3-dashboard.css','task5-readable-ui.css','task10-controls.js','task11-controls.js','task11-controls.css')
+$overlayFiles=@('task3-dashboard.js','task3-dashboard.css','task5-readable-ui.css','task11-controls.js','task11-controls.css')
 foreach($name in $overlayFiles) {
   $src = Join-Path $sourceWeb $name
   if (!(Test-Path $src)) { throw "Task3/5/10/11: izvorni fajl nedostaje: $src" }
   Copy-Item $src (Join-Path $web $name) -Force
 }
 $html = Get-Content $index -Raw
+# Remove the old duplicate handler overlay if it is present in an older built source snapshot.
+$html = $html -replace '(?m)^\s*<script[^>]+task10-controls\.js[^>]*></script>\s*',''
 if ($html -notmatch 'task3-dashboard\.css') {
   $html = $html -replace '</head>', ('  <link rel="stylesheet" href="/assets/task3-dashboard.css">' + "`r`n</head>")
 }
@@ -27,17 +29,15 @@ if ($html -notmatch 'task11-controls\.css') {
 if ($html -notmatch 'task3-dashboard\.js') {
   $html = $html -replace '</body>', ('  <script src="/assets/task3-dashboard.js"></script>' + "`r`n</body>")
 }
-if ($html -notmatch 'task10-controls\.js') {
-  $html = $html -replace '</body>', ('  <script src="/assets/task10-controls.js"></script>' + "`r`n</body>")
-}
 if ($html -notmatch 'task11-controls\.js') {
   $html = $html -replace '</body>', ('  <script src="/assets/task11-controls.js"></script>' + "`r`n</body>")
 }
 Set-Content $index $html -Encoding UTF8
 $final = Get-Content $index -Raw
-foreach($needle in @('task3-dashboard.css','task3-dashboard.js','task5-readable-ui.css','task10-controls.js','task11-controls.js','task11-controls.css')) {
+foreach($needle in @('task3-dashboard.css','task3-dashboard.js','task5-readable-ui.css','task11-controls.js','task11-controls.css')) {
   if ($final -notmatch [regex]::Escape($needle)) { throw "Task3/5/10/11: nedostaje referenca: $needle" }
 }
+if($final -match 'task10-controls\.js'){throw 'Task10: stari dupli handler overlay je i dalje učitan.'}
 foreach($name in $overlayFiles) {
   if (!(Test-Path (Join-Path $web $name))) { throw "Task3/5/10/11: fajl nije u paketu: $name" }
 }
@@ -52,9 +52,9 @@ $readableCss = Get-Content (Join-Path $web 'task5-readable-ui.css') -Raw
 foreach($cssNeedle in @('html{font-size:17px}','body{font-size:17px','button,input,select,textarea','min-height:42px','font-size:16px')) {
   if ($readableCss -notmatch [regex]::Escape($cssNeedle)) { throw "Task5: readability pravilo nedostaje: $cssNeedle" }
 }
-$controlsJs = Get-Content (Join-Path $web 'task10-controls.js') -Raw
+$appJs = Get-Content (Join-Path $web 'app.js') -Raw
 foreach($id in @('vlRecentPrev','vlRecentNext','vlShuffleBtn','vlRepeatBtn','sgRepeatBtn')) {
-  if ($controlsJs -notmatch [regex]::Escape($id)) { throw "Task10: repaired control missing: $id" }
+  if ($appJs -notmatch [regex]::Escape($id) -or $appJs -notmatch 'addEventListener') { throw "Task10: canonical app control missing: $id" }
 }
 $task11 = Get-Content (Join-Path $web 'task11-controls.js') -Raw
 foreach($needle in @('brQueueSearchMenu','brQueueManageBtn','brActiveSongMenuBtn','brAutoplayOptionsBtn','brHeadphonesBtn','brLoopAButton','brLoopBButton','PITCH + SPEED','lcCatalogFilter_','vlListView','sgViewMode','sgPagePrev','sgPageNext','sgSyncRateBtn','sgTempoCycleBtn','setSinkId')) {
