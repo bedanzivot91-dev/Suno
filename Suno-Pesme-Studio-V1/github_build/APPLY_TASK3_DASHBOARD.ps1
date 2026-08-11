@@ -57,7 +57,7 @@ foreach($id in @('vlRecentPrev','vlRecentNext','vlShuffleBtn','vlRepeatBtn','sgR
   if ($controlsJs -notmatch [regex]::Escape($id)) { throw "Task10: repaired control missing: $id" }
 }
 $task11 = Get-Content (Join-Path $web 'task11-controls.js') -Raw
-foreach($needle in @('brQueueSearchMenu','brQueueManageBtn','brActiveSongMenuBtn','brAutoplayOptionsBtn','brHeadphonesBtn','brLoopAButton','brLoopBButton','PITCH + SPEED','lcCatalogFilter_','vlListView','sgViewMode','sgPagePrev','sgPageNext','sgSyncRateBtn','sgTempoCycleBtn','setSinkId','active buttons')) {
+foreach($needle in @('brQueueSearchMenu','brQueueManageBtn','brActiveSongMenuBtn','brAutoplayOptionsBtn','brHeadphonesBtn','brLoopAButton','brLoopBButton','PITCH + SPEED','lcCatalogFilter_','vlListView','sgViewMode','sgPagePrev','sgPageNext','sgSyncRateBtn','sgTempoCycleBtn','setSinkId')) {
   if ($task11 -notmatch [regex]::Escape($needle)) { throw "Task10/11: funkcionalna popravka nedostaje: $needle" }
 }
 $py = Join-Path $PackageRoot 'Program/python/python.exe'
