@@ -1,0 +1,132 @@
+name: Suno V1 Final Acceptance
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows-final:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize complete V1 source without overwriting current fixes
+        shell: powershell
+        run: |
+          ./Suno-Pesme-Studio-V1/github_build/PREPARE_V1_SOURCE.ps1 -V1Root "$PWD/Suno-Pesme-Studio-V1"
+      - name: Source syntax and unit tests
+        shell: powershell
+        run: |
+          python -m compileall -q ./Suno-Pesme-Studio-V1/Program/app ./Suno-Pesme-Studio-V1/tests ./Suno-Pesme-Studio-V1/Program/tests
+          python -m unittest discover -s ./Suno-Pesme-Studio-V1/tests -p 'test_*.py'
+          if($LASTEXITCODE -ne 0){throw 'Unit tests failed.'}
+      - name: Build complete Windows ZIP
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/final-dist"
+          if($LASTEXITCODE -ne 0){throw 'Windows build failed.'}
+      - name: Apply final account center readability and UI-control audit
+        shell: powershell
+        run: |
+          $zip=Resolve-Path './final-dist/Suno-Pesme-Studio-V1-Windows.zip'
+          $pkg="$PWD/final-dist/pkg"
+          Remove-Item $pkg -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive $zip -DestinationPath $pkg -Force
+          ./Suno-Pesme-Studio-V1/github_build/APPLY_TASK3_DASHBOARD.ps1 -PackageRoot $pkg
+          if($LASTEXITCODE -ne 0){throw 'Final UI patch/audit failed.'}
+          python ./Suno-Pesme-Studio-V1/tests/UI_BUTTON_AUDIT.py "$pkg/Program/app/web"
+          if($LASTEXITCODE -ne 0){throw 'Active UI button audit failed.'}
+      - name: Verify standalone WebView2 desktop window
+        shell: powershell
+        env:
+          SPS_DESKTOP_WINDOW_SELF_TEST: '1'
+        run: |
+          $exe=Resolve-Path './final-dist/work/Program/Suno Pesme Studio.exe'
+          Push-Location (Split-Path $exe)
+          try{$out=& $exe 2>&1;$code=$LASTEXITCODE;$out|Out-Host;if($code -ne 0){throw "Desktop test exit=$code"};if(($out -join "`n") -notmatch 'SPS_DESKTOP_WINDOW_SELF_TEST_OK'){throw 'Desktop WebView2 marker missing.'}}finally{Pop-Location}
+      - name: Verify no ordinary browser auto-open
+        shell: powershell
+        run: |
+          $src=Get-Content './Suno-Pesme-Studio-V1/github_build/launcher/main.go' -Raw
+          if($src -match 'SUNO_AUTO_OPEN=1'){throw 'Browser auto-open is enabled.'}
+          if($src -notmatch 'SUNO_AUTO_OPEN=0'){throw 'Browser auto-open is not explicitly disabled.'}
+          if($src -notmatch 'webview2\.NewWithOptions'){throw 'Embedded WebView2 desktop window is missing.'}
+      - name: Install actual final package
+        shell: powershell
+        env:
+          SPS_INSTALL_TEST_MODE: '1'
+        run: |
+          Push-Location './final-dist/pkg'
+          try{$out=& ./INSTALIRAJ_PROGRAM.exe 2>&1;$code=$LASTEXITCODE;$out|Out-Host;if($code -ne 0){throw "Installer exit=$code"};if(($out -join "`n") -notmatch 'SPS_INSTALL_TEST_OK'){throw 'Installer marker missing.'}}finally{Pop-Location}
+      - name: Import every installed first-party module
+        shell: powershell
+        run: |
+          $root=Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          $py=Join-Path $root 'python/python.exe'
+          $app=Join-Path $root 'app'
+          $mods=Get-ChildItem $app -Filter '*.py' -File | Where-Object{$_.BaseName -notmatch '^__'}
+          if($mods.Count -lt 22){throw "Installed module count too small: $($mods.Count)"}
+          foreach($m in $mods){& $py -c "import sys;sys.path.insert(0,r'$app');__import__('$($m.BaseName)')";if($LASTEXITCODE -ne 0){throw "Import failed: $($m.Name)"}}
+      - name: Installed launcher backend self-test
+        shell: powershell
+        env:
+          SPS_LAUNCHER_SELF_TEST: '1'
+        run: |
+          $root=Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          Push-Location $root
+          try{$out=& './Suno Pesme Studio.exe' 2>&1;$code=$LASTEXITCODE;$out|Out-Host;if($code -ne 0){throw "Launcher exit=$code"};if(($out -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK'){throw 'Launcher self-test marker missing.'}}finally{Pop-Location}
+      - name: Installed desktop-window self-test
+        shell: powershell
+        env:
+          SPS_DESKTOP_WINDOW_SELF_TEST: '1'
+        run: |
+          $root=Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          Push-Location $root
+          try{$out=& './Suno Pesme Studio.exe' 2>&1;$code=$LASTEXITCODE;$out|Out-Host;if($code -ne 0){throw "Installed desktop exit=$code"};if(($out -join "`n") -notmatch 'SPS_DESKTOP_WINDOW_SELF_TEST_OK'){throw 'Installed desktop marker missing.'}}finally{Pop-Location}
+      - name: Actual uninstaller test
+        shell: powershell
+        env:
+          SPS_UNINSTALL_TEST_MODE: '1'
+        run: |
+          $root=Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          $un=Join-Path $root 'Deinstaliraj Suno Pesme Studio.exe'
+          $out=& $un 2>&1;$code=$LASTEXITCODE;$out|Out-Host
+          if($code -ne 0){throw "Uninstaller exit=$code"}
+          if(($out -join "`n") -notmatch 'SPS_UNINSTALL_TEST_OK'){throw 'Uninstaller marker missing.'}
+          for($i=0;$i -lt 30 -and (Test-Path $root);$i++){Start-Sleep -Milliseconds 500}
+          if(Test-Path $root){throw 'Installed folder was not removed.'}
+          Write-Host 'WINDOWS_FINAL_ACCEPTANCE_OK'
+
+  panako-olaf-final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Java and FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y openjdk-17-jdk-headless ffmpeg git unzip
+      - name: Build pinned Panako
+        run: |
+          git clone https://github.com/JorenSix/Panako.git /tmp/panako
+          git -C /tmp/panako fetch --depth 1 origin e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211
+          git -C /tmp/panako checkout --detach e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211
+          cd /tmp/panako
+          sed -i 's#gradle-7\.2-bin\.zip#gradle-7.3.3-bin.zip#' gradle/wrapper/gradle-wrapper.properties
+          if grep -q '^distributionSha256Sum=' gradle/wrapper/gradle-wrapper.properties; then sed -i 's#^distributionSha256Sum=.*#distributionSha256Sum=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302#' gradle/wrapper/gradle-wrapper.properties; else printf '\ndistributionSha256Sum=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302\n' >> gradle/wrapper/gradle-wrapper.properties; fi
+          chmod +x ./gradlew
+          ./gradlew --no-daemon shadowJar
+          ./gradlew --no-daemon install
+          test -s "$HOME/.panako/panako.jar"
+      - name: Real Panako and Olaf store query
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/final-panako; mkdir -p "$ROOT"/{media,pdb,pcache,odb,ocache}
+          ffmpeg -hide_banner -loglevel error -y -f lavfi -i 'anoisesrc=color=pink:duration=32:seed=12345' -ac 1 -ar 44100 "$ROOT/media/reference.wav"
+          ffmpeg -hide_banner -loglevel error -y -ss 9 -t 12 -i "$ROOT/media/reference.wav" -ac 1 -ar 44100 "$ROOT/media/query.wav"
+          JAR="$HOME/.panako/panako.jar"
+          java -jar "$JAR" store STRATEGY=panako PANAKO_LMDB_FOLDER="$ROOT/pdb" PANAKO_CACHE_FOLDER="$ROOT/pcache" "$ROOT/media/reference.wav" >/tmp/pstore
+          java -jar "$JAR" query STRATEGY=panako PANAKO_LMDB_FOLDER="$ROOT/pdb" PANAKO_CACHE_FOLDER="$ROOT/pcache" "$ROOT/media/query.wav" | tee /tmp/pquery
+          grep -q reference.wav /tmp/pquery
+          java -jar "$JAR" store STRATEGY=olaf OLAF_LMDB_FOLDER="$ROOT/odb" OLAF_CACHE_FOLDER="$ROOT/ocache" "$ROOT/media/reference.wav" >/tmp/ostore
+          java -jar "$JAR" query STRATEGY=olaf OLAF_LMDB_FOLDER="$ROOT/odb" OLAF_CACHE_FOLDER="$ROOT/ocache" "$ROOT/media/query.wav" | tee /tmp/oquery
+          grep -q reference.wav /tmp/oquery
+          echo PANAKO_OLAF_FINAL_ACCEPTANCE_OK
