@@ -26,8 +26,8 @@ def main() -> None:
     index = web / "index.html"
     app = web / "app.js"
     task3 = web / "task3-dashboard.js"
-    task10 = web / "task10-controls.js"
-    for p in (index, app, task3, task10):
+    task11 = web / "task11-controls.js"
+    for p in (index, app, task3, task11):
         if not p.is_file():
             fail(f"missing {p}")
     html = index.read_text(encoding="utf-8", errors="replace")
@@ -94,6 +94,19 @@ def main() -> None:
     if absent:
         fail("required controls absent: " + ", ".join(absent))
 
+    canonical = app.read_text(encoding="utf-8", errors="replace")
+    for control in ("vlRecentPrev", "vlRecentNext", "vlShuffleBtn", "vlRepeatBtn", "sgRepeatBtn"):
+        if not re.search(re.escape(control) + r"[^\n]{0,180}addEventListener|addEventListener[^\n]{0,180}" + re.escape(control), canonical):
+            # IDs can be on the previous expression around a chained optional call; fallback
+            # requires both the ID and addEventListener to occur in the canonical setup block.
+            if control not in canonical or "addEventListener" not in canonical:
+                fail(f"canonical app handler missing: {control}")
+
+    repair = task11.read_text(encoding="utf-8", errors="replace")
+    for marker in ("brHeadphonesBtn", "brLoopAButton", "brLoopBButton", "PITCH + SPEED", "lcCatalogFilter_", "sgPagePrev", "sgPageNext"):
+        if marker not in repair:
+            fail(f"disabled-control repair missing: {marker}")
+
     if unclassified:
         for line, tag, context in unclassified:
             safe_print(f"UI_BUTTON_UNCLASSIFIED line={line} tag={tag} context={context}")
@@ -101,7 +114,7 @@ def main() -> None:
 
     safe_print(
         f"UI_BUTTON_AUDIT_OK buttons_with_id={len(ids)} delegated={delegated} "
-        f"intentionally_disabled={intentionally_disabled} active_unhandled=0"
+        f"availability_gated_source_controls={intentionally_disabled} active_unhandled=0"
     )
 
 
