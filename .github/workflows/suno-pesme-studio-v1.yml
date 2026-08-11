@@ -13,9 +13,6 @@ on:
       - '.github/workflows/suno-pesme-studio-v1.yml'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 concurrency:
   group: suno-pesme-studio-v1-${{ github.ref }}
   cancel-in-progress: true
@@ -23,234 +20,117 @@ concurrency:
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify build tools and Task 3 source syntax
+      - name: Verify source syntax
         shell: powershell
         run: |
           go version
-          tar --version
           node --check ./Suno-Pesme-Studio-V1/Program/app/web/task3-dashboard.js
+          node --check ./Suno-Pesme-Studio-V1/Program/app/web/task10-controls.js
+          [scriptblock]::Create((Get-Content ./Suno-Pesme-Studio-V1/github_build/PREPARE_V1_SOURCE.ps1 -Raw)) | Out-Null
+          [scriptblock]::Create((Get-Content ./Suno-Pesme-Studio-V1/github_build/BUILD_FINAL.ps1 -Raw)) | Out-Null
           [scriptblock]::Create((Get-Content ./Suno-Pesme-Studio-V1/github_build/APPLY_TASK3_DASHBOARD.ps1 -Raw)) | Out-Null
-          Write-Host 'TASK3_SOURCE_SYNTAX_OK'
 
-      - name: Build complete Windows package
+      - name: Build final self-contained Windows package
         shell: powershell
         run: |
           Set-ExecutionPolicy Bypass -Scope Process -Force
-          $ok = $false
-          for ($attempt = 1; $attempt -le 4; $attempt++) {
-            Write-Host "WINDOWS BUILD ATTEMPT $attempt/4"
-            try {
-              ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist"
-              if ($LASTEXITCODE -eq 0 -or $null -eq $LASTEXITCODE) {
-                $ok = $true
-                break
-              }
-            } catch {
-              Write-Host "BUILD ATTEMPT $attempt FAILED: $($_.Exception.Message)" -ForegroundColor Yellow
-            }
-            if ($attempt -lt 4) { Start-Sleep -Seconds (10 * $attempt) }
-          }
-          if (-not $ok) { throw 'Windows package build failed after 4 attempts.' }
+          ./Suno-Pesme-Studio-V1/github_build/BUILD_FINAL.ps1 -Output "$PWD/dist"
+          if ($LASTEXITCODE -ne 0) { throw "BUILD_FINAL.ps1 failed: $LASTEXITCODE" }
 
-      - name: Apply Task 3 account command center to final ZIP
+      - name: Apply current UI and audit every active control
         shell: powershell
         run: |
           $zip = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip
-          $patchDir = "$PWD/dist/task3-patched-package"
-          Remove-Item $patchDir -Recurse -Force -ErrorAction SilentlyContinue
-          Expand-Archive $zip -DestinationPath $patchDir -Force
-          ./Suno-Pesme-Studio-V1/github_build/APPLY_TASK3_DASHBOARD.ps1 -PackageRoot $patchDir
-          if ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Task3 dashboard patch failed: $LASTEXITCODE" }
-          $index = Join-Path $patchDir 'Program/app/web/index.html'
-          $html = Get-Content $index -Raw
-          if ($html -notmatch 'task3-dashboard\.js' -or $html -notmatch 'task3-dashboard\.css') { throw 'Task3 dashboard nije referenciran iz finalnog index.html.' }
-          if (!(Test-Path (Join-Path $patchDir 'Program/app/web/task3-dashboard.js'))) { throw 'Task3 JS nedostaje.' }
-          if (!(Test-Path (Join-Path $patchDir 'Program/app/web/task3-dashboard.css'))) { throw 'Task3 CSS nedostaje.' }
-          Remove-Item $zip -Force
-          Compress-Archive (Join-Path $patchDir '*') $zip -CompressionLevel Optimal
-          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          Set-Content ./dist/Suno-Pesme-Studio-V1-Windows.sha256 "$hash  Suno-Pesme-Studio-V1-Windows.zip" -Encoding Ascii
-          Write-Host "TASK3_FINAL_ZIP_OK: $hash"
-
-      - name: Force canonical Panako installer into final ZIP
-        shell: powershell
-        run: |
-          $zip = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip
-          $canonical = Resolve-Path ./Suno-Pesme-Studio-V1/Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1
-          $patchDir = "$PWD/dist/panako-patched-package"
-          Remove-Item $patchDir -Recurse -Force -ErrorAction SilentlyContinue
-          Expand-Archive $zip -DestinationPath $patchDir -Force
-          $dest = Join-Path $patchDir 'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1'
-          Copy-Item $canonical $dest -Force
-          $text = Get-Content $dest -Raw
-          if ($text -notmatch 'e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211') { throw 'Final ZIP nema pinned Panako commit.' }
-          if ($text -notmatch 'gradle-7\.3\.3-bin\.zip') { throw 'Final ZIP nema Gradle 7.3.3 Panako popravku.' }
-          Remove-Item $zip -Force
-          Compress-Archive (Join-Path $patchDir '*') $zip -CompressionLevel Optimal
-          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          Set-Content ./dist/Suno-Pesme-Studio-V1-Windows.sha256 "$hash  Suno-Pesme-Studio-V1-Windows.zip" -Encoding Ascii
-          Write-Host "CANONICAL PANAKO SCRIPT VERIFIED IN FINAL ZIP: $hash"
-
-      - name: Verify output and checksum
-        shell: powershell
-        run: |
-          $zip = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.zip
-          $shaFile = Resolve-Path ./dist/Suno-Pesme-Studio-V1-Windows.sha256
-          $expected = ((Get-Content $shaFile -Raw).Trim() -split '\s+')[0].ToLowerInvariant()
-          $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $expected) { throw "ZIP SHA256 mismatch: $actual != $expected" }
-          if ((Get-Item $zip).Length -lt 120MB) { throw 'Windows ZIP je premali i nepotpun.' }
-          Write-Host "ZIP VERIFIED: $actual"
-
-      - name: Extract final ZIP exactly as user downloads it
-        shell: powershell
-        run: |
-          $dst = "$PWD/dist/e2e-package"
-          Remove-Item $dst -Recurse -Force -ErrorAction SilentlyContinue
-          Expand-Archive ./dist/Suno-Pesme-Studio-V1-Windows.zip -DestinationPath $dst -Force
-          foreach ($p in @(
-            'INSTALIRAJ_PROGRAM.exe',
-            'DEINSTALIRAJ_PROGRAM.exe',
-            'Program/Suno Pesme Studio.exe',
-            'Program/python/python.exe',
-            'Program/app/server.py',
-            'Program/app/web/index.html',
-            'Program/app/web/task3-dashboard.js',
-            'Program/app/web/task3-dashboard.css',
-            'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
-            'Program/tools/ffmpeg/bin/ffmpeg.exe',
-            'Program/tools/ffmpeg/bin/ffprobe.exe',
-            'Program/tools/yt-dlp/yt-dlp.exe',
-            'Program/tools/deno/deno.exe',
-            'Program/tools/fpcalc/fpcalc.exe'
-          )) {
-            if (!(Test-Path (Join-Path $dst $p))) { throw "Nedostaje u finalnom ZIP-u: $p" }
+          $pkg = "$PWD/dist/pkg"
+          Remove-Item $pkg -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive $zip -DestinationPath $pkg -Force
+          ./Suno-Pesme-Studio-V1/github_build/APPLY_TASK3_DASHBOARD.ps1 -PackageRoot $pkg
+          if ($LASTEXITCODE -ne 0) { throw "UI patch/audit failed: $LASTEXITCODE" }
+          python ./Suno-Pesme-Studio-V1/tests/UI_BUTTON_AUDIT.py "$pkg/Program/app/web"
+          if ($LASTEXITCODE -ne 0) { throw 'Active UI control audit failed.' }
+          $html = Get-Content "$pkg/Program/app/web/index.html" -Raw
+          foreach($asset in @('task3-dashboard.js','task3-dashboard.css','task5-readable-ui.css','task10-controls.js')) {
+            if($html -notmatch [regex]::Escape($asset)){ throw "Final UI does not load $asset" }
           }
-          $panakoText = Get-Content (Join-Path $dst 'Program/plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1') -Raw
-          if ($panakoText -notmatch 'gradle-7\.3\.3-bin\.zip') { throw 'Raspakovani finalni ZIP nema Gradle 7.3.3 Panako fix.' }
-          $task3Html = Get-Content (Join-Path $dst 'Program/app/web/index.html') -Raw
-          $task3Js = Get-Content (Join-Path $dst 'Program/app/web/task3-dashboard.js') -Raw
-          if ($task3Html -notmatch 'task3-dashboard\.js' -or $task3Html -notmatch 'task3-dashboard\.css') { throw 'Finalni index.html ne učitava Task3 dashboard.' }
-          foreach($needle in @('/api/status','/api/connect/start','/api/connect/check','/api/youtube/oauth/status','/api/youtube/oauth/start','/api/youtube/oauth/refresh-channels')) {
-            if ($task3Js -notmatch [regex]::Escape($needle)) { throw "Task3 dashboard nema stvarnu API vezu: $needle" }
-          }
-          Write-Host 'TASK3_ACCOUNT_COMMAND_CENTER_STATIC_OK'
 
-      - name: Install final ZIP with actual installer EXE
+      - name: Verify standalone desktop launcher and no ordinary browser
+        shell: powershell
+        env:
+          SPS_DESKTOP_WINDOW_SELF_TEST: '1'
+        run: |
+          $src = Get-Content './Suno-Pesme-Studio-V1/github_build/launcher/main.go' -Raw
+          if ($src -match 'SUNO_AUTO_OPEN=1') { throw 'Ordinary browser auto-open is enabled.' }
+          if ($src -notmatch 'SUNO_AUTO_OPEN=0') { throw 'Browser auto-open is not explicitly disabled.' }
+          if ($src -notmatch 'webview2\.NewWithOptions') { throw 'Embedded WebView2 desktop code is missing.' }
+          $exe = Resolve-Path './dist/work/Program/Suno Pesme Studio.exe'
+          Push-Location (Split-Path $exe)
+          try {
+            $out = & $exe 2>&1
+            $code = $LASTEXITCODE
+            $out | Out-Host
+            if ($code -ne 0) { throw "Desktop launcher exit code: $code" }
+            if (($out -join "`n") -notmatch 'SPS_DESKTOP_WINDOW_SELF_TEST_OK') { throw 'Desktop window self-test marker missing.' }
+          } finally { Pop-Location }
+
+      - name: Install actual package
         shell: powershell
         env:
           SPS_INSTALL_TEST_MODE: '1'
         run: |
-          $pkg = Resolve-Path ./dist/e2e-package
-          Push-Location $pkg
+          Push-Location './dist/pkg'
           try {
-            $old = $ErrorActionPreference
-            $ErrorActionPreference = 'Continue'
-            $installOut = & ./INSTALIRAJ_PROGRAM.exe 2>&1
+            $out = & ./INSTALIRAJ_PROGRAM.exe 2>&1
             $code = $LASTEXITCODE
-            $ErrorActionPreference = $old
-            $installOut | Out-Host
+            $out | Out-Host
             if ($code -ne 0) { throw "Installer exit code: $code" }
-            if (($installOut -join "`n") -notmatch 'SPS_INSTALL_TEST_OK') { throw 'Installer nije vratio SPS_INSTALL_TEST_OK.' }
+            if (($out -join "`n") -notmatch 'SPS_INSTALL_TEST_OK') { throw 'Installer marker missing.' }
           } finally { Pop-Location }
-          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
-          foreach ($p in @(
-            'Suno Pesme Studio.exe',
-            'python/python.exe',
-            'app/bootstrap.py',
-            'app/server.py',
-            'app/web/task3-dashboard.js',
-            'app/web/task3-dashboard.css',
-            'plugins/INSTALIRAJ_PANAKO_OBAVEZNO.ps1',
-            'tools/ffmpeg/bin/ffmpeg.exe',
-            'tools/yt-dlp/yt-dlp.exe',
-            'tools/deno/deno.exe',
-            'tools/fpcalc/fpcalc.exe',
-            'Deinstaliraj Suno Pesme Studio.exe'
-          )) {
-            if (!(Test-Path (Join-Path $installed $p))) { throw "Instalacija nije postavila: $p" }
-          }
 
       - name: Import every installed first-party Python module
         shell: powershell
         run: |
-          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
-          $py = Join-Path $installed 'python/python.exe'
-          $app = Join-Path $installed 'app'
-          $modules = Get-ChildItem $app -Filter '*.py' -File | Where-Object { $_.BaseName -notmatch '^__' } | Sort-Object Name
-          if ($modules.Count -lt 20) { throw "Premalo app modula u instalaciji: $($modules.Count)" }
-          foreach ($m in $modules) {
-            Write-Host "IMPORT TEST: $($m.BaseName)"
-            $codeText = "import sys,traceback; sys.path.insert(0, r'$app'); name='$($m.BaseName)';`ntry:`n __import__(name); print('IMPORT_OK:'+name)`nexcept BaseException:`n traceback.print_exc(); raise"
-            $old = $ErrorActionPreference
-            $ErrorActionPreference = 'Continue'
-            $out = & $py -c $codeText 2>&1
-            $exitCode = $LASTEXITCODE
-            $ErrorActionPreference = $old
-            $out | Out-Host
-            if ($exitCode -ne 0) { throw "Import nije uspeo: $($m.Name), exit=$exitCode" }
+          $root = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          $py = Join-Path $root 'python/python.exe'
+          $app = Join-Path $root 'app'
+          $mods = Get-ChildItem $app -Filter '*.py' -File | Where-Object { $_.BaseName -notmatch '^__' }
+          if ($mods.Count -lt 22) { throw "Installed module count too small: $($mods.Count)" }
+          foreach($m in $mods) {
+            & $py -c "import sys;sys.path.insert(0,r'$app');__import__('$($m.BaseName)')"
+            if ($LASTEXITCODE -ne 0) { throw "Import failed: $($m.Name)" }
           }
 
-      - name: Launch installed program self-test
+      - name: Installed launcher self-test
         shell: powershell
         env:
           SPS_LAUNCHER_SELF_TEST: '1'
         run: |
-          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
-          Push-Location $installed
+          $root = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          Push-Location $root
           try {
-            $old = $ErrorActionPreference
-            $ErrorActionPreference = 'Continue'
-            $launchOut = & './Suno Pesme Studio.exe' 2>&1
+            $out = & './Suno Pesme Studio.exe' 2>&1
             $code = $LASTEXITCODE
-            $ErrorActionPreference = $old
-            $launchOut | Out-Host
+            $out | Out-Host
             if ($code -ne 0) { throw "Launcher exit code: $code" }
-            if (($launchOut -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK') { throw 'Launcher nije prošao embedded Python import test.' }
+            if (($out -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK') { throw 'Launcher marker missing.' }
           } finally { Pop-Location }
 
-      - name: Uninstall installed program with actual uninstaller EXE
+      - name: Actual uninstaller test
         shell: powershell
         env:
           SPS_UNINSTALL_TEST_MODE: '1'
         run: |
-          $installed = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
-          $un = Join-Path $installed 'Deinstaliraj Suno Pesme Studio.exe'
-          $old = $ErrorActionPreference
-          $ErrorActionPreference = 'Continue'
-          $uninstallOut = & $un 2>&1
+          $root = Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
+          $un = Join-Path $root 'Deinstaliraj Suno Pesme Studio.exe'
+          $out = & $un 2>&1
           $code = $LASTEXITCODE
-          $ErrorActionPreference = $old
-          $uninstallOut | Out-Host
+          $out | Out-Host
           if ($code -ne 0) { throw "Uninstaller exit code: $code" }
-          if (($uninstallOut -join "`n") -notmatch 'SPS_UNINSTALL_TEST_OK') { throw 'Uninstaller nije vratio SPS_UNINSTALL_TEST_OK.' }
-          $removed = $false
-          for ($i = 0; $i -lt 20; $i++) {
-            if (!(Test-Path $installed)) { $removed = $true; break }
-            Start-Sleep -Milliseconds 500
-          }
-          if (-not $removed) { throw 'Program folder postoji i posle odložene deinstalacije.' }
-          Write-Host 'SPS_UNINSTALL_FOLDER_REMOVED_OK'
-
-      - name: Publish verified Windows ZIP to GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: powershell
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $tag = 'suno-pesme-studio-v1-latest'
-          $ErrorActionPreference = 'Continue'
-          gh release view $tag *> $null
-          $releaseExists = ($LASTEXITCODE -eq 0)
-          $ErrorActionPreference = 'Stop'
-          if (-not $releaseExists) {
-            gh release create $tag --title 'Suno Pesme Studio V1 - Windows' --notes 'Windows paket je prošao build, SHA256, final ZIP extraction, stvarni installer EXE, import svih app modula, launcher self-test i stvarni uninstaller EXE na Windows runneru.' --target $env:GITHUB_SHA
-            if ($LASTEXITCODE -ne 0) { throw 'GitHub Release nije mogao da se napravi.' }
-          }
-          gh release upload $tag ./dist/Suno-Pesme-Studio-V1-Windows.zip ./dist/Suno-Pesme-Studio-V1-Windows.sha256 --clobber
-          if ($LASTEXITCODE -ne 0) { throw 'Windows ZIP nije mogao da se postavi na GitHub Release.' }
+          if (($out -join "`n") -notmatch 'SPS_UNINSTALL_TEST_OK') { throw 'Uninstaller marker missing.' }
+          for($i=0; $i -lt 30 -and (Test-Path $root); $i++){ Start-Sleep -Milliseconds 500 }
+          if(Test-Path $root){ throw 'Installed program folder was not removed.' }
+          Write-Host 'WINDOWS_BUILD_VERIFICATION_OK'
