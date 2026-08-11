@@ -1,0 +1,5 @@
+/* Task 10/11: functional view modes for controls that were previously decorative/disabled. */
+.sps-compact-view .lc-song-row,.sps-compact-view .vl-song-row,.sps-compact-view .sg-tech-row{min-height:32px!important;padding-top:3px!important;padding-bottom:3px!important;font-size:14px!important}
+.sps-roomy-view .lc-song-row,.sps-roomy-view .vl-song-row,.sps-roomy-view .sg-tech-row{min-height:58px!important;padding-top:11px!important;padding-bottom:11px!important;font-size:16px!important}
+#brHeadphonesBtn.active,#brLoopAButton.active,#brLoopBButton.active,#sgSyncRateBtn.active,#sgTempoCycleBtn.active{outline:2px solid currentColor;outline-offset:1px}
+[hidden].lc-song-row{display:none!important}
