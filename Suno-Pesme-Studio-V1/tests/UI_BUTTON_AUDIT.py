@@ -5,8 +5,17 @@ import sys
 from pathlib import Path
 
 
+def safe_print(text: str) -> None:
+    enc = getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        sys.stdout.write(text + "\n")
+    except UnicodeEncodeError:
+        sys.stdout.buffer.write((text + "\n").encode(enc, errors="backslashreplace"))
+        sys.stdout.buffer.flush()
+
+
 def fail(msg: str) -> None:
-    print(f"UI_BUTTON_AUDIT_FAIL: {msg}")
+    safe_print(f"UI_BUTTON_AUDIT_FAIL: {msg}")
     raise SystemExit(1)
 
 
@@ -80,9 +89,9 @@ def main() -> None:
     if absent:
         fail("required controls absent: " + ", ".join(absent))
 
-    print(f"UI_BUTTON_AUDIT_OK buttons_with_id={len(ids)} delegated={delegated} unclassified_no_id={len(unclassified)}")
+    safe_print(f"UI_BUTTON_AUDIT_OK buttons_with_id={len(ids)} delegated={delegated} unclassified_no_id={len(unclassified)}")
     for line, tag, context in unclassified:
-        print(f"UI_BUTTON_UNCLASSIFIED line={line} tag={tag} context={context}")
+        safe_print(f"UI_BUTTON_UNCLASSIFIED line={line} tag={tag} context={context}")
 
 
 if __name__ == "__main__":
