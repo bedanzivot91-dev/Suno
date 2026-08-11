@@ -1,0 +1,45 @@
+name: Suno V1 Self Contained Source
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Suno-Pesme-Studio-V1/complete-source-b64/**'
+      - 'Suno-Pesme-Studio-V1/github_build/PREPARE_V1_SOURCE.ps1'
+      - '.github/workflows/suno-v1-self-contained-source.yml'
+  workflow_dispatch:
+
+jobs:
+  verify-self-contained:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize complete V1 source
+        shell: powershell
+        run: |
+          ./Suno-Pesme-Studio-V1/github_build/PREPARE_V1_SOURCE.ps1 -V1Root "$PWD/Suno-Pesme-Studio-V1"
+      - name: Verify complete first-party source
+        shell: powershell
+        run: |
+          $app="$PWD/Suno-Pesme-Studio-V1/Program/app"
+          $required=@('advanced_features.py','audio_match.py','audio_tools.py','bootstrap.py','cdp.py','database.py','id3.py','music_recognition.py','panako_engine.py','secret_store.py','security_lock.py','server.py','song_finder.py','song_finder_calibration.py','suno_client.py','suno_compat.py','system_metrics.py','v3_features.py','version.py','watchdog.py','youtube_oauth.py','youtube_tools.py')
+          foreach($f in $required){if(!(Test-Path (Join-Path $app $f))){throw "Missing V1 source module: $f"}}
+          if((Get-ChildItem $app -Filter '*.py' -File).Count -lt 22){throw 'V1 source module count is incomplete.'}
+          Write-Host 'V1_COMPLETE_SOURCE_MODULES_OK'
+      - name: Remove historical source dependency
+        shell: powershell
+        run: |
+          $legacy="$PWD/extension/Suno-Pesme-Studio-v3.3.2-TEME-1-2-3-4-5"
+          if(Test-Path $legacy){Remove-Item $legacy -Recurse -Force}
+          New-Item -ItemType Directory -Path "$legacy/Program/app" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$legacy/Program/plugins" -Force | Out-Null
+          Write-Host 'LEGACY_SOURCE_CONTENT_REMOVED'
+      - name: Build from V1 source only
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/dist-self-contained"
+          if($LASTEXITCODE -ne 0){throw "Self-contained V1 build failed: $LASTEXITCODE"}
+          if(!(Test-Path './dist-self-contained/Suno-Pesme-Studio-V1-Windows.zip')){throw 'Final ZIP missing.'}
+          Write-Host 'V1_SELF_CONTAINED_WINDOWS_BUILD_OK'
