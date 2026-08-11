@@ -36,6 +36,7 @@ def main() -> None:
     matches = list(re.finditer(r"<button\b[^>]*>", html, flags=re.I | re.S))
     ids: list[str] = []
     delegated = 0
+    intentionally_disabled = 0
     unclassified: list[tuple[int, str, str]] = []
     delegate_attrs = (
         "data-view", "data-go", "data-br-view", "data-sm-view", "data-lc-view",
@@ -46,6 +47,10 @@ def main() -> None:
         m = re.search(r'\bid=["\']([^"\']+)["\']', tag, flags=re.I)
         if m:
             ids.append(m.group(1))
+            continue
+
+        if re.search(r'\bdisabled(?:\s|>|=)', tag, flags=re.I):
+            intentionally_disabled += 1
             continue
 
         data_pairs = re.findall(r'\b(data-[\w-]+)(?:=["\']([^"\']*)["\'])?', tag, flags=re.I)
@@ -89,9 +94,15 @@ def main() -> None:
     if absent:
         fail("required controls absent: " + ", ".join(absent))
 
-    safe_print(f"UI_BUTTON_AUDIT_OK buttons_with_id={len(ids)} delegated={delegated} unclassified_no_id={len(unclassified)}")
-    for line, tag, context in unclassified:
-        safe_print(f"UI_BUTTON_UNCLASSIFIED line={line} tag={tag} context={context}")
+    if unclassified:
+        for line, tag, context in unclassified:
+            safe_print(f"UI_BUTTON_UNCLASSIFIED line={line} tag={tag} context={context}")
+        fail(f"active buttons without verified handler: {len(unclassified)}")
+
+    safe_print(
+        f"UI_BUTTON_AUDIT_OK buttons_with_id={len(ids)} delegated={delegated} "
+        f"intentionally_disabled={intentionally_disabled} active_unhandled=0"
+    )
 
 
 if __name__ == "__main__":
