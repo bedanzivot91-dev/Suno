@@ -1,6 +1,11 @@
 name: Suno V1 Final Acceptance
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/suno-v1-final-acceptance.yml'
+      - 'Suno-Pesme-Studio-V1/**'
   workflow_dispatch:
 
 jobs:
