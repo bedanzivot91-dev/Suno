@@ -8,29 +8,38 @@ on:
       - 'Suno-Pesme-Studio-V1/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   windows-final:
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - name: Materialize complete V1 source without overwriting current fixes
-        shell: powershell
-        run: |
-          ./Suno-Pesme-Studio-V1/github_build/PREPARE_V1_SOURCE.ps1 -V1Root "$PWD/Suno-Pesme-Studio-V1"
+
       - name: Source syntax and unit tests
         shell: powershell
         run: |
+          ./Suno-Pesme-Studio-V1/github_build/PREPARE_V1_SOURCE.ps1 -V1Root "$PWD/Suno-Pesme-Studio-V1"
           python -m compileall -q ./Suno-Pesme-Studio-V1/Program/app ./Suno-Pesme-Studio-V1/tests ./Suno-Pesme-Studio-V1/Program/tests
           python -m unittest discover -s ./Suno-Pesme-Studio-V1/tests -p 'test_*.py'
           if($LASTEXITCODE -ne 0){throw 'Unit tests failed.'}
-      - name: Build complete Windows ZIP
+          python -m unittest discover -s ./Suno-Pesme-Studio-V1/Program/tests -p 'test_*.py'
+          if($LASTEXITCODE -ne 0){throw 'Program tests failed.'}
+          python ./Suno-Pesme-Studio-V1/tests/LOCAL_REGRESSION.py
+          if($LASTEXITCODE -ne 0){throw 'Local regression failed.'}
+          python ./Suno-Pesme-Studio-V1/tests/API_ROUTE_SMOKE.py
+          if($LASTEXITCODE -ne 0){throw 'API route smoke failed.'}
+
+      - name: Build complete self-contained Windows ZIP
         shell: powershell
         run: |
           Set-ExecutionPolicy Bypass -Scope Process -Force
-          ./Suno-Pesme-Studio-V1/github_build/BUILD_COMPLETE.ps1 -Output "$PWD/final-dist"
-          if($LASTEXITCODE -ne 0){throw 'Windows build failed.'}
-      - name: Apply final account center readability and UI-control audit
+          ./Suno-Pesme-Studio-V1/github_build/BUILD_FINAL.ps1 -Output "$PWD/final-dist"
+          if($LASTEXITCODE -ne 0){throw 'Windows final build failed.'}
+
+      - name: Apply final UI and audit every active control
         shell: powershell
         run: |
           $zip=Resolve-Path './final-dist/Suno-Pesme-Studio-V1-Windows.zip'
@@ -41,28 +50,59 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'Final UI patch/audit failed.'}
           python ./Suno-Pesme-Studio-V1/tests/UI_BUTTON_AUDIT.py "$pkg/Program/app/web"
           if($LASTEXITCODE -ne 0){throw 'Active UI button audit failed.'}
+          $html=Get-Content "$pkg/Program/app/web/index.html" -Raw
+          foreach($asset in @('task3-dashboard.js','task3-dashboard.css','task5-readable-ui.css','task10-controls.js')){
+            if($html -notmatch [regex]::Escape($asset)){throw "Final UI asset missing from index: $asset"}
+          }
+          $css=Get-Content "$pkg/Program/app/web/task5-readable-ui.css" -Raw
+          foreach($needle in @('html{font-size:17px}','body{font-size:17px','min-height:42px','font-size:16px')){
+            if($css -notmatch [regex]::Escape($needle)){throw "Readable UI rule missing: $needle"}
+          }
+          $dashboard=Get-Content "$pkg/Program/app/web/task3-dashboard.js" -Raw
+          foreach($needle in @('t3SunoLogin','t3SunoCheck','t3YoutubeLogin','t3YoutubeRefresh','/api/connect/start','/api/connect/check','/api/youtube/oauth/start','/api/youtube/oauth/refresh-channels')){
+            if($dashboard -notmatch [regex]::Escape($needle)){throw "Home account control/API missing: $needle"}
+          }
+
+      - name: Repack audited final ZIP and SHA256
+        shell: powershell
+        run: |
+          $zip=Resolve-Path './final-dist/Suno-Pesme-Studio-V1-Windows.zip'
+          Remove-Item $zip -Force
+          Compress-Archive './final-dist/pkg/*' $zip -CompressionLevel Optimal
+          $hash=(Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content './final-dist/Suno-Pesme-Studio-V1-Windows.sha256' "$hash  Suno-Pesme-Studio-V1-Windows.zip" -Encoding Ascii
+          if((Get-Item $zip).Length -lt 120MB){throw 'Final audited ZIP is unexpectedly small.'}
+          Write-Host "FINAL_AUDITED_ZIP_SHA256=$hash"
+
       - name: Verify standalone WebView2 desktop window
         shell: powershell
         env:
           SPS_DESKTOP_WINDOW_SELF_TEST: '1'
         run: |
-          $exe=Resolve-Path './final-dist/work/Program/Suno Pesme Studio.exe'
-          Push-Location (Split-Path $exe)
-          try{$out=& $exe 2>&1;$code=$LASTEXITCODE;$out|Out-Host;if($code -ne 0){throw "Desktop test exit=$code"};if(($out -join "`n") -notmatch 'SPS_DESKTOP_WINDOW_SELF_TEST_OK'){throw 'Desktop WebView2 marker missing.'}}finally{Pop-Location}
-      - name: Verify no ordinary browser auto-open
-        shell: powershell
-        run: |
           $src=Get-Content './Suno-Pesme-Studio-V1/github_build/launcher/main.go' -Raw
           if($src -match 'SUNO_AUTO_OPEN=1'){throw 'Browser auto-open is enabled.'}
           if($src -notmatch 'SUNO_AUTO_OPEN=0'){throw 'Browser auto-open is not explicitly disabled.'}
           if($src -notmatch 'webview2\.NewWithOptions'){throw 'Embedded WebView2 desktop window is missing.'}
-      - name: Install actual final package
+          $exe=Resolve-Path './final-dist/work/Program/Suno Pesme Studio.exe'
+          Push-Location (Split-Path $exe)
+          try{
+            $out=& $exe 2>&1;$code=$LASTEXITCODE;$out|Out-Host
+            if($code -ne 0){throw "Desktop test exit=$code"}
+            if(($out -join "`n") -notmatch 'SPS_DESKTOP_WINDOW_SELF_TEST_OK'){throw 'Desktop WebView2 marker missing.'}
+          }finally{Pop-Location}
+
+      - name: Install actual audited final package
         shell: powershell
         env:
           SPS_INSTALL_TEST_MODE: '1'
         run: |
           Push-Location './final-dist/pkg'
-          try{$out=& ./INSTALIRAJ_PROGRAM.exe 2>&1;$code=$LASTEXITCODE;$out|Out-Host;if($code -ne 0){throw "Installer exit=$code"};if(($out -join "`n") -notmatch 'SPS_INSTALL_TEST_OK'){throw 'Installer marker missing.'}}finally{Pop-Location}
+          try{
+            $out=& ./INSTALIRAJ_PROGRAM.exe 2>&1;$code=$LASTEXITCODE;$out|Out-Host
+            if($code -ne 0){throw "Installer exit=$code"}
+            if(($out -join "`n") -notmatch 'SPS_INSTALL_TEST_OK'){throw 'Installer marker missing.'}
+          }finally{Pop-Location}
+
       - name: Import every installed first-party module
         shell: powershell
         run: |
@@ -71,7 +111,11 @@ jobs:
           $app=Join-Path $root 'app'
           $mods=Get-ChildItem $app -Filter '*.py' -File | Where-Object{$_.BaseName -notmatch '^__'}
           if($mods.Count -lt 22){throw "Installed module count too small: $($mods.Count)"}
-          foreach($m in $mods){& $py -c "import sys;sys.path.insert(0,r'$app');__import__('$($m.BaseName)')";if($LASTEXITCODE -ne 0){throw "Import failed: $($m.Name)"}}
+          foreach($m in $mods){
+            & $py -c "import sys;sys.path.insert(0,r'$app');__import__('$($m.BaseName)')"
+            if($LASTEXITCODE -ne 0){throw "Import failed: $($m.Name)"}
+          }
+
       - name: Installed launcher backend self-test
         shell: powershell
         env:
@@ -79,7 +123,12 @@ jobs:
         run: |
           $root=Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
           Push-Location $root
-          try{$out=& './Suno Pesme Studio.exe' 2>&1;$code=$LASTEXITCODE;$out|Out-Host;if($code -ne 0){throw "Launcher exit=$code"};if(($out -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK'){throw 'Launcher self-test marker missing.'}}finally{Pop-Location}
+          try{
+            $out=& './Suno Pesme Studio.exe' 2>&1;$code=$LASTEXITCODE;$out|Out-Host
+            if($code -ne 0){throw "Launcher exit=$code"}
+            if(($out -join "`n") -notmatch 'SPS_LAUNCHER_SELF_TEST_OK'){throw 'Launcher self-test marker missing.'}
+          }finally{Pop-Location}
+
       - name: Installed desktop-window self-test
         shell: powershell
         env:
@@ -87,7 +136,12 @@ jobs:
         run: |
           $root=Join-Path $env:LOCALAPPDATA 'Programs/Suno Pesme Studio'
           Push-Location $root
-          try{$out=& './Suno Pesme Studio.exe' 2>&1;$code=$LASTEXITCODE;$out|Out-Host;if($code -ne 0){throw "Installed desktop exit=$code"};if(($out -join "`n") -notmatch 'SPS_DESKTOP_WINDOW_SELF_TEST_OK'){throw 'Installed desktop marker missing.'}}finally{Pop-Location}
+          try{
+            $out=& './Suno Pesme Studio.exe' 2>&1;$code=$LASTEXITCODE;$out|Out-Host
+            if($code -ne 0){throw "Installed desktop exit=$code"}
+            if(($out -join "`n") -notmatch 'SPS_DESKTOP_WINDOW_SELF_TEST_OK'){throw 'Installed desktop marker missing.'}
+          }finally{Pop-Location}
+
       - name: Actual uninstaller test
         shell: powershell
         env:
@@ -102,6 +156,16 @@ jobs:
           if(Test-Path $root){throw 'Installed folder was not removed.'}
           Write-Host 'WINDOWS_FINAL_ACCEPTANCE_OK'
 
+      - name: Upload accepted Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: suno-v1-final-windows
+          path: |
+            final-dist/Suno-Pesme-Studio-V1-Windows.zip
+            final-dist/Suno-Pesme-Studio-V1-Windows.sha256
+          if-no-files-found: error
+          retention-days: 7
+
   panako-olaf-final:
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -114,17 +178,26 @@ jobs:
           git clone https://github.com/JorenSix/Panako.git /tmp/panako
           git -C /tmp/panako fetch --depth 1 origin e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211
           git -C /tmp/panako checkout --detach e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211
+          test "$(git -C /tmp/panako rev-parse HEAD)" = 'e4b0e1dbb55e340bc66c90bac0ceb82b2cf84211'
+          ! grep -q 'org.lmdbjava.*0.8.3-SNAPSHOT' /tmp/panako/build.gradle
           cd /tmp/panako
           sed -i 's#gradle-7\.2-bin\.zip#gradle-7.3.3-bin.zip#' gradle/wrapper/gradle-wrapper.properties
-          if grep -q '^distributionSha256Sum=' gradle/wrapper/gradle-wrapper.properties; then sed -i 's#^distributionSha256Sum=.*#distributionSha256Sum=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302#' gradle/wrapper/gradle-wrapper.properties; else printf '\ndistributionSha256Sum=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302\n' >> gradle/wrapper/gradle-wrapper.properties; fi
+          if grep -q '^distributionSha256Sum=' gradle/wrapper/gradle-wrapper.properties; then
+            sed -i 's#^distributionSha256Sum=.*#distributionSha256Sum=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302#' gradle/wrapper/gradle-wrapper.properties
+          else
+            printf '\ndistributionSha256Sum=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302\n' >> gradle/wrapper/gradle-wrapper.properties
+          fi
           chmod +x ./gradlew
           ./gradlew --no-daemon shadowJar
           ./gradlew --no-daemon install
           test -s "$HOME/.panako/panako.jar"
+          java -jar "$HOME/.panako/panako.jar" -v
+
       - name: Real Panako and Olaf store query
         run: |
           set -euo pipefail
-          ROOT=/tmp/final-panako; mkdir -p "$ROOT"/{media,pdb,pcache,odb,ocache}
+          ROOT=/tmp/final-panako
+          mkdir -p "$ROOT"/{media,pdb,pcache,odb,ocache}
           ffmpeg -hide_banner -loglevel error -y -f lavfi -i 'anoisesrc=color=pink:duration=32:seed=12345' -ac 1 -ar 44100 "$ROOT/media/reference.wav"
           ffmpeg -hide_banner -loglevel error -y -ss 9 -t 12 -i "$ROOT/media/reference.wav" -ac 1 -ar 44100 "$ROOT/media/query.wav"
           JAR="$HOME/.panako/panako.jar"
@@ -135,3 +208,32 @@ jobs:
           java -jar "$JAR" query STRATEGY=olaf OLAF_LMDB_FOLDER="$ROOT/odb" OLAF_CACHE_FOLDER="$ROOT/ocache" "$ROOT/media/query.wav" | tee /tmp/oquery
           grep -q reference.wav /tmp/oquery
           echo PANAKO_OLAF_FINAL_ACCEPTANCE_OK
+
+  publish-final:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [windows-final, panako-olaf-final]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download accepted Windows package
+        uses: actions/download-artifact@v4
+        with:
+          name: suno-v1-final-windows
+          path: final-release
+      - name: Verify release SHA256
+        run: |
+          cd final-release
+          expected="$(awk '{print $1}' Suno-Pesme-Studio-V1-Windows.sha256)"
+          actual="$(sha256sum Suno-Pesme-Studio-V1-Windows.zip | awk '{print $1}')"
+          test "$expected" = "$actual"
+          test "$(stat -c%s Suno-Pesme-Studio-V1-Windows.zip)" -gt 125829120
+          echo "FINAL_RELEASE_SHA256=$actual"
+      - name: Publish only fully accepted release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag='suno-pesme-studio-v1-latest'
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --title 'Suno Pesme Studio V1 - Windows' --notes 'Objavljeno tek nakon Windows final acceptance i real Panako/Olaf store-query E2E provere.' --target "$GITHUB_SHA"
+          fi
+          gh release upload "$tag" --repo "$GITHUB_REPOSITORY" final-release/Suno-Pesme-Studio-V1-Windows.zip final-release/Suno-Pesme-Studio-V1-Windows.sha256 --clobber
+          echo FINAL_RELEASE_PUBLISHED_OK
