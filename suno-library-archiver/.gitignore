@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+my-suno-archive/
+catalog.sqlite3
+catalog.csv
+audio/
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.zip
